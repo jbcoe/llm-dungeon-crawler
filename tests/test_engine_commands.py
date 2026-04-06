@@ -33,7 +33,7 @@ def assert_printed(mock_print: MagicMock, expected_text: str) -> None:
 
 
 def test_display_room(engine: GameEngine) -> None:
-    """Test that the 'look' command triggers the room rendering console output."""
+    """Test that the display_room helper renders the room output correctly."""
     with patch("game.engine.GameUI.print") as mock_print:
         engine.display_room()
         assert_printed(mock_print, "A test room")
@@ -44,7 +44,7 @@ def test_display_room(engine: GameEngine) -> None:
 
 
 def test_display_status(engine: GameEngine) -> None:
-    """Test that the 'status' command outputs player HP, attack, and inventory."""
+    """Test that the display_status helper formats player HP, attack, and inventory."""
     with patch("game.engine.GameUI.print") as mock_print:
         engine.display_status()
         assert_printed(mock_print, "HP:")

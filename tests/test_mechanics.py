@@ -38,12 +38,8 @@ def test_load_data_file_not_found() -> None:
 @patch("game.mechanics.ROOMS", [{"name": "Cave", "description": "Dark"}])
 def test_generate_mechanics() -> None:
     """Validate procedural room generation structure and probabilities."""
-    # Test generation and make sure we get the expected types and structure
-    # We patch random to make things predictable, or just check the structure.
-    with patch("random.random", return_value=0.1):  # force items/enemies/npcs to spawn
-        # Wait, if random is 0.1:
-        # Enemy chance 0.3 -> spawns
-        # NPC chance 0.2 -> won't spawn because enemy spawns!
+    # Test generation and make sure we get the expected types and structure.
+    with patch("random.random", return_value=0.1):  # force items and enemies to spawn
         mechanics = generate_mechanics(floor=1)
 
         assert mechanics["room_type"] == {"name": "Cave", "description": "Dark"}

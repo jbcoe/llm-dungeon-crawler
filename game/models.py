@@ -15,7 +15,7 @@ class Item(GameModel):
     name: str
     description: str
     stat_effect: int = Field(default=0)
-    effect_type: str = Field(default="none")  # healing, damage, none, weapon
+    effect_type: str = Field(default="none")  # healing, weapon, none
 
 
 class Enemy(GameModel):

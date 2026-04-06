@@ -9,9 +9,9 @@ def test_item_defaults() -> None:
     assert item.stat_effect == 0
     assert item.effect_type == "none"
 
-    item3 = Item(name="Test3", description="Desc", stat_effect=10, effect_type="damage")
+    item3 = Item(name="Test3", description="Desc", stat_effect=10, effect_type="weapon")
     assert item3.stat_effect == 10
-    assert item3.effect_type == "damage"
+    assert item3.effect_type == "weapon"
 
 
 def test_enemy_defaults() -> None:
