@@ -1,3 +1,5 @@
+"""Shared test fixtures for the game."""
+
 import pytest
 from unittest.mock import patch
 

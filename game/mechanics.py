@@ -1,8 +1,11 @@
+"""Game mechanics and data loading."""
+
 import random
 import importlib.resources
 
 
 def load_data(filename):
+    """Load game data from a markdown file."""
     items = []
     filepath = importlib.resources.files("game.data").joinpath(filename)
     if not filepath.exists():
@@ -25,6 +28,7 @@ ROOMS = load_data("rooms.md")
 
 
 def generate_mechanics(floor: int) -> dict:
+    """Generate the mechanical components of a room based on the current floor."""
     exits_pool = ["north", "south", "east", "west"]
     exits = random.sample(exits_pool, random.randint(1, 4))
 

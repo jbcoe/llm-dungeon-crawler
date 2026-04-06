@@ -1,8 +1,11 @@
+"""Tests for the game engine logic."""
+
 from game.engine import GameEngine
 from game.models import Room
 
 
 def test_engine_initialization(mock_ai_api):
+    """Test that the engine initializes with correct player state."""
     mock_gen_room, _, _, _, _, _ = mock_ai_api
     engine = GameEngine(mock_input=["quit"])
     engine.start()
@@ -16,6 +19,7 @@ def test_engine_initialization(mock_ai_api):
 
 
 def test_combat(mock_ai_api):
+    """Test combat mechanics and enemy death."""
     _, mock_narrate, _, _, _, _ = mock_ai_api
     engine = GameEngine(mock_input=["attack slime", "quit"])
     room = Room(
@@ -42,6 +46,7 @@ def test_combat(mock_ai_api):
 
 
 def test_talk(mock_ai_api):
+    """Test NPC interaction and dialogue."""
     _, _, mock_npc_resp, _, _, _ = mock_ai_api
     engine = GameEngine(mock_input=["talk merchant", "hello", "bye", "quit"])
     room = Room(
@@ -62,6 +67,7 @@ def test_talk(mock_ai_api):
 
 
 def test_autocompletion_options():
+    """Test that autocompletion returns expected command and entity words."""
     engine = GameEngine(mock_input=["quit"])
     room = Room(
         description="Test Room",
@@ -106,6 +112,7 @@ def test_autocompletion_options():
 
 
 def test_history_tracking():
+    """Test that player commands are correctly tracked in history."""
     engine = GameEngine(mock_input=["look", "go north", "inventory", "quit"])
     engine.current_room = Room(description="Test", exits=["north"])
     # Mock enter_new_room so it doesn't try to generate a real room when moving
@@ -116,6 +123,7 @@ def test_history_tracking():
 
 
 def test_history_truncation():
+    """Test that command history is truncated according to max_history."""
     engine = GameEngine(mock_input=["look", "look", "look", "quit"], max_history=2)
     engine.current_room = Room(description="Test", exits=["north"])
     engine.game_loop()

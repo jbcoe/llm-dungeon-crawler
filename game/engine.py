@@ -1,3 +1,5 @@
+"""Core game engine responsible for the game loop and command handling."""
+
 from game.models import Player, Room
 from game.ai import (
     generate_room,
@@ -60,7 +62,10 @@ console = Console()
 
 
 class GameEngine:
+    """Main game engine class managing state and logic."""
+
     def __init__(self, mock_input=None, max_history: int = 1000):
+        """Initialize the game engine."""
         self.player = Player()
         self.floor = 1
         self.current_room = None
@@ -74,6 +79,7 @@ class GameEngine:
         self.setup_readline()
 
     def setup_readline(self):
+        """Configure readline for command completion and history."""
         if self.mock_input is not None:
             return
         try:
@@ -103,6 +109,7 @@ class GameEngine:
             pass
 
     def get_completion_options(self) -> list[str]:
+        """Generate a list of available words for autocompletion."""
         options = list(ALL_COMMAND_WORDS)
         if self.current_room:
             options.extend(self.current_room.exits)
@@ -118,6 +125,7 @@ class GameEngine:
         return sorted(list(set(options)))
 
     def get_input(self, prompt: str) -> str:
+        """Get input from the user or mock input if provided."""
         if self.mock_input is not None:
             if self.mock_input:
                 return self.mock_input.pop(0)
@@ -125,6 +133,7 @@ class GameEngine:
         return input(prompt)
 
     def start(self):
+        """Start the game session."""
         if self.mock_input is None:
             setup_logger()
         log_event("GAME_START", "Starting new game session.")
@@ -135,6 +144,7 @@ class GameEngine:
         self.game_loop()
 
     def enter_new_room(self, direction: str = "forward"):
+        """Handle moving into a new or existing room."""
         if direction == "north":
             self.y += 1
         elif direction == "south":
@@ -160,6 +170,7 @@ class GameEngine:
         self.display_room()
 
     def display_room(self):
+        """Print the description and contents of the current room."""
         if not self.current_room:
             return
         console.print(
@@ -185,6 +196,7 @@ class GameEngine:
                 )
 
     def game_loop(self):
+        """Run the main input-process-output loop."""
         while self.running and self.player.hp > 0:
             console.print("")
             command = self.get_input("> ").strip().lower()
@@ -238,6 +250,7 @@ class GameEngine:
             console.print("[bold red]Game Over. You have died.[/bold red]")
 
     def display_status(self):
+        """Display player health, attack stats, and inventory."""
         console.print(
             f"[bold magenta]HP:[/bold magenta] {self.player.hp}/{self.player.max_hp}"
         )
@@ -251,6 +264,7 @@ class GameEngine:
         console.print(f"[bold magenta]Inventory:[/bold magenta] {inventory}")
 
     def handle_go(self, parts: list):
+        """Process the 'go' command to move between rooms."""
         if not self.current_room:
             return
 
@@ -270,6 +284,7 @@ class GameEngine:
             console.print("Go where?")
 
     def handle_attack(self, parts: list):
+        """Process the 'attack' command to engage enemies."""
         if not self.current_room or not self.current_room.enemies:
             console.print("There is nothing to attack here.")
             return
@@ -327,6 +342,7 @@ class GameEngine:
         console.print(f"[italic]{narrative}[/italic]")
 
     def handle_talk(self, parts: list):
+        """Process the 'talk' command to converse with NPCs."""
         if not self.current_room or not self.current_room.npcs:
             console.print("There is no one here to talk to.")
             return
@@ -385,6 +401,7 @@ class GameEngine:
                 history = history[-1000:]
 
     def handle_take(self, parts: list):
+        """Process the 'take' command to pick up items."""
         if not self.current_room:
             return
 
@@ -418,6 +435,7 @@ class GameEngine:
             console.print("Take what?")
 
     def handle_use(self, parts: list):
+        """Process the 'use' command for items in inventory."""
         if len(parts) > 1:
             item_name = " ".join(parts[1:])
             item = next(
@@ -466,6 +484,7 @@ class GameEngine:
             console.print("Use what?")
 
     def handle_equip(self, parts: list):
+        """Process the 'equip' command to equip a weapon."""
         if len(parts) > 1:
             item_name = " ".join(parts[1:])
             item = next(
@@ -506,6 +525,7 @@ class GameEngine:
             console.print("Equip what?")
 
     def handle_unequip(self):
+        """Process the 'unequip' command to remove the current weapon."""
         if self.player.equipped_weapon:
             item = self.player.equipped_weapon
             self.player.inventory.append(item)

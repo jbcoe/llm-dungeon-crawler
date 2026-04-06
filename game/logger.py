@@ -1,3 +1,5 @@
+"""Logging utilities for game events and story generation."""
+
 import logging
 import datetime
 import os
@@ -8,6 +10,7 @@ logger.addHandler(logging.NullHandler())
 
 
 def setup_logger():
+    """Initialize the file logger for the game session."""
     # Remove NullHandler if it's there
     for handler in logger.handlers:
         if isinstance(handler, logging.NullHandler):
@@ -30,4 +33,5 @@ def setup_logger():
 
 
 def log_event(event_type: str, details: str):
+    """Log a specific game event with details."""
     logger.info(f"[{event_type}]\n{details}\n{'-' * 40}")

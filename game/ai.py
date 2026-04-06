@@ -1,9 +1,12 @@
+"""AI-powered narration and response generation."""
+
 from ollama import chat
 from game.logger import log_event
 from game.mechanics import generate_mechanics
 
 
 def generate_room(floor: int, previous_context: str = "") -> dict:
+    """Generate a room description using AI based on current mechanics."""
     mechanics = generate_mechanics(floor)
 
     # Format lists for the prompt
@@ -58,6 +61,7 @@ def generate_room(floor: int, previous_context: str = "") -> dict:
 
 
 def narrate_item_use(item_name: str, item_description: str, room_context: str) -> str:
+    """Generate narrative text for using an item."""
     prompt = f"""
     Act as a poetic Dungeon Master. A player interacts with an object in their environment.
     Item: {item_name}
@@ -77,6 +81,7 @@ def narrate_item_use(item_name: str, item_description: str, room_context: str) -
 def generate_npc_response(
     npc_name: str, npc_context: str, player_message: str, history: str = ""
 ) -> str:
+    """Generate a dialogue response from an NPC."""
     prompt = f"""
     Act as {npc_name}, a resident of this dark dungeon.
     Your identity: {npc_context}
@@ -102,6 +107,7 @@ def narrate_combat(
     enemy_hp: int,
     damage_dealt: int,
 ) -> str:
+    """Generate visceral narration for a combat exchange."""
     prompt = f"""
     Act as a gritty combat narrator.
     The player {player_action} against the {enemy_name}.
@@ -120,6 +126,7 @@ def narrate_combat(
 
 
 def generate_intro() -> str:
+    """Generate a haunting introduction for the game session."""
     prompt = """
     Act as a Dungeon Master. Write a haunting introduction for a new journey.
 

@@ -31,3 +31,6 @@ packages = ["game"]
 [tool.pytest]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+
+[tool.ruff.lint]
+extend-select = ["D"]

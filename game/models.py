@@ -1,7 +1,11 @@
+"""Data models for game entities using Pydantic."""
+
 from pydantic import BaseModel, field_validator
 
 
 class Item(BaseModel):
+    """Represents an item in the game."""
+
     name: str
     description: str
     stat_effect: int | None = 0
@@ -10,12 +14,15 @@ class Item(BaseModel):
     @field_validator("stat_effect", "effect_type", mode="before")
     @classmethod
     def set_defaults(cls, v, info):
+        """Set default values for optional fields."""
         if v is None:
             return 0 if info.field_name == "stat_effect" else "none"
         return v
 
 
 class Enemy(BaseModel):
+    """Represents an enemy character."""
+
     name: str
     description: str
     hp: int | None = 10
@@ -25,18 +32,23 @@ class Enemy(BaseModel):
     @field_validator("hp", "max_hp", "attack", mode="before")
     @classmethod
     def set_enemy_defaults(cls, v, info):
+        """Set default values for enemy stats."""
         if v is None:
             return 5 if info.field_name == "attack" else 10
         return v
 
 
 class NPC(BaseModel):
+    """Represents a non-player character."""
+
     name: str
     description: str
     dialogue_context: str | None = ""
 
 
 class Room(BaseModel):
+    """Represents a room in the dungeon."""
+
     description: str
     exits: list[str]
     items: list[Item] = []
@@ -45,6 +57,8 @@ class Room(BaseModel):
 
 
 class Player(BaseModel):
+    """Represents the player character and their state."""
+
     hp: int = 100
     max_hp: int = 100
     attack: int = 10
@@ -53,6 +67,7 @@ class Player(BaseModel):
 
     @property
     def total_attack(self) -> int:
+        """Calculate total attack including weapon bonuses."""
         bonus = (
             self.equipped_weapon.stat_effect
             if self.equipped_weapon and self.equipped_weapon.stat_effect
@@ -61,7 +76,9 @@ class Player(BaseModel):
         return self.attack + bonus
 
     def take_damage(self, amount: int):
+        """Reduce player HP by the specified amount."""
         self.hp = max(0, self.hp - amount)
 
     def heal(self, amount: int):
+        """Increase player HP by the specified amount, up to max HP."""
         self.hp = min(self.max_hp, self.hp + amount)
