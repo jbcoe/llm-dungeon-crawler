@@ -4,11 +4,11 @@ import random
 import importlib.resources
 
 
-def load_data(filename):
+def load_data(filename: str) -> list[dict[str, str]]:
     """Load game data from a markdown file."""
     items = []
     filepath = importlib.resources.files("game.data").joinpath(filename)
-    if not filepath.exists():
+    if not filepath.is_file():
         raise FileNotFoundError(f"Missing expected data file: {filename}")
     with filepath.open("r", encoding="utf-8") as f:
         for line in f:

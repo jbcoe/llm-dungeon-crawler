@@ -9,7 +9,7 @@ from game.engine import GameEngine
 console = Console()
 
 
-def check_ollama_connection():
+def check_ollama_connection() -> None:
     """Verify that Ollama is running and the required model is available."""
     try:
         response = ollama.list()
@@ -50,7 +50,7 @@ def check_ollama_connection():
         sys.exit(1)
 
 
-def check_history_length(value):
+def check_history_length(value: str) -> int:
     """Validate that the history length is a non-negative integer."""
     ivalue = int(value)
     if ivalue < 0:
@@ -60,7 +60,7 @@ def check_history_length(value):
     return ivalue
 
 
-def main():
+def main() -> None:
     """Parse arguments and start the game engine."""
     parser = argparse.ArgumentParser(description="LLM Dungeon Crawler")
     parser.add_argument(

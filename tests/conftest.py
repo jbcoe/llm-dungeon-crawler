@@ -1,11 +1,12 @@
 """Shared test fixtures for the game."""
 
+from typing import Generator, Any
 import pytest
 from unittest.mock import patch
 
 
 @pytest.fixture(autouse=True)
-def mock_ai_api():
+def mock_ai_api() -> Generator[tuple[Any, ...], None, None]:
     """Mock the AI API calls and console output globally for all tests."""
     with (
         patch("game.engine.generate_room") as mock_gen_room,

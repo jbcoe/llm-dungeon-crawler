@@ -53,7 +53,11 @@ def generate_room(floor: int, previous_context: str = "") -> dict:
         messages=[{"role": "user", "content": prompt}],
         options={"temperature": 0.7},
     )
-    description = response.message.content.strip()
+    description = (
+        response.message.content.strip()
+        if response.message and response.message.content
+        else ""
+    )
     log_event("API_RESPONSE: generate_room_description", description)
     mechanics["description"] = description
 
@@ -73,7 +77,11 @@ def narrate_item_use(item_name: str, item_description: str, room_context: str) -
     """
     log_event("API_CALL: narrate_item_use", prompt)
     response = chat(model="gemma4:e4b", messages=[{"role": "user", "content": prompt}])
-    response_text = response.message.content.strip()
+    response_text = (
+        response.message.content.strip()
+        if response.message and response.message.content
+        else ""
+    )
     log_event("API_RESPONSE: narrate_item_use", response_text)
     return response_text
 
@@ -95,7 +103,11 @@ def generate_npc_response(
     """
     log_event("API_CALL: generate_npc_response", prompt)
     response = chat(model="gemma4:e4b", messages=[{"role": "user", "content": prompt}])
-    response_text = response.message.content.strip()
+    response_text = (
+        response.message.content.strip()
+        if response.message and response.message.content
+        else ""
+    )
     log_event("API_RESPONSE: generate_npc_response", response_text)
     return response_text
 
@@ -120,7 +132,11 @@ def narrate_combat(
     """
     log_event("API_CALL: narrate_combat", prompt)
     response = chat(model="gemma4:e4b", messages=[{"role": "user", "content": prompt}])
-    response_text = response.message.content.strip()
+    response_text = (
+        response.message.content.strip()
+        if response.message and response.message.content
+        else ""
+    )
     log_event("API_RESPONSE: narrate_combat", response_text)
     return response_text
 
@@ -139,6 +155,10 @@ def generate_intro() -> str:
     """
     log_event("API_CALL: generate_intro", prompt)
     response = chat(model="gemma4:e4b", messages=[{"role": "user", "content": prompt}])
-    response_text = response.message.content.strip()
+    response_text = (
+        response.message.content.strip()
+        if response.message and response.message.content
+        else ""
+    )
     log_event("API_RESPONSE: generate_intro", response_text)
     return response_text
