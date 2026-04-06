@@ -169,6 +169,15 @@ class GameEngine:
         except ImportError:
             pass
 
+    def display_room(self) -> None:
+        """Backward compatibility helper to display the current room."""
+        if self.current_room:
+            self.ui.display_room(self.current_room)
+
+    def display_status(self) -> None:
+        """Backward compatibility helper to display player status."""
+        self.ui.display_status(self.player)
+
     def get_completion_options(self) -> list[str]:
         """Generate a list of available words for autocompletion."""
         options = []

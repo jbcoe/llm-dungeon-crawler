@@ -23,29 +23,25 @@ def load_prompt(filename: str) -> str:
 
 
 def _safe_ai_call(model: str, prompt: str, system_message: str | None = None) -> str:
-    """Make a robust call to the AI model with basic error handling."""
+    """Make a call to the AI model without silencing errors."""
     messages = []
     if system_message:
         messages.append({"role": "system", "content": system_message})
     messages.append({"role": "user", "content": prompt})
 
-    try:
-        log_event(f"API_CALL: {model}", prompt)
-        response = chat(
-            model=model,
-            messages=messages,
-            options={"temperature": 0.7},
-        )
-        if not response.message or not response.message.content:
-            logger.warning("AI returned an empty response.")
-            return "The air grows cold and silent..."
+    log_event(f"API_CALL: {model}", prompt)
+    response = chat(
+        model=model,
+        messages=messages,
+        options={"temperature": 0.7},
+    )
+    if not response.message or not response.message.content:
+        logger.error("AI returned an empty response.")
+        raise ValueError("AI returned an empty response.")
 
-        content = response.message.content.strip()
-        log_event(f"API_RESPONSE: {model}", content)
-        return content
-    except Exception as e:
-        logger.error(f"AI call failed: {str(e)}")
-        return "You feel a strange disturbance in the void..."
+    content = response.message.content.strip()
+    log_event(f"API_RESPONSE: {model}", content)
+    return content
 
 
 def generate_room(floor: int, previous_context: str = "") -> dict[str, Any]:

@@ -2,6 +2,8 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from game.ai import _safe_ai_call
 from game.engine import GameEngine, GameUI
 from game.mechanics import _get_item_mechanics, load_data
@@ -51,22 +53,22 @@ def test_item_mechanics_balancing() -> None:
 
 @patch("game.ai.chat")
 def test_safe_ai_call_error_handling(mock_chat: MagicMock) -> None:
-    """Test that _safe_ai_call handles AI service failures gracefully."""
+    """Test that _safe_ai_call does not silently hide errors."""
     mock_chat.side_effect = Exception("AI Service Down")
 
-    response = _safe_ai_call("model", "prompt")
-    assert "strange disturbance" in response
+    with pytest.raises(Exception, match="AI Service Down"):
+        _safe_ai_call("model", "prompt")
 
 
 @patch("game.ai.chat")
 def test_safe_ai_call_empty_response(mock_chat: MagicMock) -> None:
-    """Test that _safe_ai_call handles empty AI responses gracefully."""
+    """Test that _safe_ai_call raises an error on empty responses."""
     mock_response = MagicMock()
     mock_response.message.content = ""
     mock_chat.return_value = mock_response
 
-    response = _safe_ai_call("model", "prompt")
-    assert "cold and silent" in response
+    with pytest.raises(ValueError, match="AI returned an empty response."):
+        _safe_ai_call("model", "prompt")
 
 
 def test_engine_fallback_on_bad_room_generation() -> None:
