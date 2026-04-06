@@ -1,0 +1,26 @@
+# NPC Types
+- Wandering Merchant: A pragmatic traveler with a heavy pack, willing to trade mundane goods for exotic dungeon finds.
+- Lost Knight: A heavily armored paladin who has lost their party and their way, seeking redemption or an exit.
+- Ghostly Scholar: The spirit of an ancient historian, bound to the dungeon. They offer lore and history in exchange for hearing news of the outside world.
+- Cursed Prisoner: A wretched soul bound in magical chains. They plead for release, but their true nature is unknown.
+- Sphinx: A majestic creature with the body of a lion and the head of a human. They block the path, demanding the answer to a riddle.
+- Helpful Goblin: An outcast from their tribe, offering crude maps and warnings about traps in exchange for shiny trinkets.
+- Talking Sword: A sentient, magical blade resting on an altar. It constantly critiques the player's combat skills and boasts of its past glory.
+- Mad Alchemist: A disheveled researcher surrounded by bubbling potions. They offer strange, untested concoctions to the player.
+- Blind Seer: An old oracle who navigates by touch and sound. They offer vague, cryptic prophecies about the dungeon's depths.
+- Wounded Adventurer: A fellow explorer leaning against a wall, clutching a bleeding side. They need healing or a safe escort.
+- Dungeon Janitor: A surprisingly cheerful skeleton with a mop and bucket, tasked with cleaning up the mess left by adventurers and monsters.
+- Statue of a Forgotten Deity: A stone idol that occasionally speaks in a booming, resonant voice, offering blessings or demanding sacrifices.
+- Fairy: A tiny, glowing creature that flits around the room, offering guidance or leading the player into traps for amusement.
+- Doomed Bard: A musician who wandered too far into the dungeon and is now playing a melancholic tune, awaiting the inevitable.
+- Cult Defector: A former member of a dark cult, hiding in the shadows and offering secrets about their former brethren's plans.
+- Hermit Wizard: A reclusive spellcaster who has made a home in a safe corner of the dungeon, annoyed by the interruption but willing to barter spells.
+- Spectral Guard: The ghost of a loyal soldier, still standing post at a ruined door, demanding a forgotten password.
+- Rat King: A swarm of rats that speak with a collective, chittering voice, offering information in exchange for food.
+- Trapped Demon: A lesser fiend confined within a summoning circle, promising power or treasure if the circle is broken.
+- Wandering Minstrel: A surprisingly upbeat musician looking for inspiration in the darkest places, asking the player for tales of their deeds.
+- Crazed Miner: A dwarf wielding a pickaxe, obsessed with finding a legendary vein of gold and convinced the player is trying to steal it.
+- Silent Monk: A martial artist meditating in the center of the room, communicating only through gestures and challenging the player to a sparring match.
+- Suspicious Chest: A chest that occasionally giggles or burps, claiming to be a mimic but offering a safe haven for items (or is it?).
+- Temporal Anomaly: A flickering projection of the player from the future or past, offering a cryptic warning before vanishing.
+- Sleepy Dragon: A small, juvenile dragon curled up on a pile of copper coins, annoyed at being woken but susceptible to flattery.

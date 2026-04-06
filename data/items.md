@@ -1,0 +1,50 @@
+# Item Types
+- Healing Salve: A small tin containing a pungent, green paste that closes minor wounds.
+- Rusty Broadsword: A heavy blade, dulled by time and neglect, but still capable of crushing armor.
+- Glowing Orb: A fist-sized crystal that emits a soft, continuous blue light.
+- Tarnished Ring: A silver band depicting a serpent eating its own tail. It feels surprisingly cold.
+- Petrified Wood Wand: A gnarled stick of wood turned to stone. It crackles with faint static electricity.
+- Vial of Spider Venom: A small glass vial filled with a viscous, purple liquid. Handle with care.
+- Enchanted Compass: A brass compass whose needle spins wildly before pointing towards the nearest magic source.
+- Torn Scroll of Fireball: A brittle parchment with scorch marks along the edges. The runes are mostly intact.
+- Bag of Holding (Torn): A magical leather pouch with a large tear. It occasionally spits out random objects.
+- Iron Key: A heavy, ornate iron key covered in cobwebs. What does it unlock?
+- Potion of Faded Memory: A cloudy liquid that tastes like regret. It might cure a curse, or make you forget your name.
+- Dusty Spyglass: A brass spyglass with a cracked lens. Peering through it reveals things not otherwise there.
+- Obsidian Dagger: A wicked-looking blade chipped from volcanic glass. Exceptionally sharp but brittle.
+- Minor Stamina Potion: A bubbling red concoction that restores energy and focus in combat.
+- Leather Armor (Scrap): A piece of hardened leather armor, providing minor protection.
+- Lockpicks: A set of delicate tools for opening mechanical locks.
+- Torch: A thick wooden stick wrapped in pitch-soaked rags, ready to be lit.
+- Grappling Hook: An iron hook attached to a length of sturdy hemp rope.
+- Elven Bread: A small, wrapped wafer that is surprisingly filling and doesn't spoil.
+- Mysterious Amulet: A heavy gold pendant with an unblinking, red gemstone eye.
+- Throwing Knives: A set of three well-balanced blades designed for throwing.
+- Vial of Holy Water: Blessed water that burns undead flesh like acid.
+- Magic Beans: A handful of strange, colorful seeds. Planting them might be dangerous.
+- Blank Book: A leather-bound journal with entirely blank pages. It resists all attempts to write in it.
+- Sunfire Blade: A sword that glows with the intensity of a summer noon, dealing extra fire damage.
+- Frostbrand Axe: A heavy axe covered in eternal frost, freezing enemies on hit.
+- Shadow-Stitched Dagger: A blade that seems to disappear in shadows, bypassing physical armor.
+- Stormbreaker Hammer: A massive warhammer that crackles with lightning and thunder.
+- Dragon-Scale Mail: Armor forged from the scales of a red dragon, offering immense protection.
+- Elven Longbow: A masterfully crafted bow that fires arrows with incredible speed and accuracy.
+- Soul-Eating Scythe: A dark weapon that drains the life force of those it strikes.
+- Phoenix Feather Wand: A wand that can unleash powerful bursts of fire.
+- Aegis Shield: A divine shield said to be able to block even the mightiest blows.
+- Boots of Speed: Magical boots that allow the wearer to move with unnatural quickness.
+- Cloak of Invisibility: A shimmering cloak that can hide the wearer from sight.
+- Ring of Regeneration: A gold band that slowly heals the wearer's wounds over time.
+- Amulet of True Sight: A gemstone pendant that allows the wearer to see through illusions and invisibility.
+- Gauntlets of Ogre Power: Heavy iron gauntlets that grant the wearer the strength of an ogre.
+- Belt of Giant Strength: A leather belt that imbues the wearer with the might of a giant.
+- Vorpal Sword: A legendary blade that can decapitate even the most powerful foes with a single stroke.
+- Holy Avenger: A paladin's sword that glows with divine light, dealing extra damage to undead and demons.
+- Staff of the Archmagi: A powerful staff that contains a vast array of magical spells.
+- Deck of Many Things: A deck of magical cards, each with a unique and unpredictable effect.
+- Sphere of Annihilation: A black void that disintegrates anything it touches.
+- Wand of Wonder: A chaotic wand that produces a random magical effect every time it is used.
+- Mirror of Life Trapping: A magical mirror that can trap creatures within its depths.
+- Bag of Beans: A bag of magical beans that can grow into a variety of strange and dangerous things.
+- Cube of Force: A small cube that can create a powerful force field.
+- Helm of Telepathy: A helmet that allows the wearer to read the thoughts of others.

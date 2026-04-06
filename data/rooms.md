@@ -1,0 +1,26 @@
+# Room Types
+- Alchemist's Laboratory: Filled with bubbling retorts, strange colored glass, and an overpowering scent of sulfur and ozone.
+- Forgotten Library: Tall bookshelves leaning precariously, filled with crumbling tomes and scrolls. Motes of dust dance in narrow shafts of light.
+- Torture Chamber: Rusty iron maidens, blood-stained racks, and chains hanging from the ceiling. A chilling draft blows through.
+- Sunken Temple: Knee-deep water covers a mosaic floor. Statues of forgotten gods stare blindly into the gloom.
+- Overgrown Conservatory: Mutant carnivorous plants and giant ferns have broken through the glass ceiling, reclaiming the stonework.
+- Goblin Encampment: Crude tents, a smoldering fire pit filled with bones, and the lingering smell of unwashed bodies.
+- Crystal Cavern: Glittering stalactites of amethyst and quartz pulse with a faint, inner light, illuminating the cave in a purple hue.
+- Clockwork Observatory: Giant brass gears and cogs grind endlessly. A large, cracked telescope points towards an unseen sky.
+- Abandoned Armory: Racks of rusted weapons and dented armor stand like silent sentinels. A faint metallic tang hangs in the air.
+- Ancient Crypt: Row upon row of stone sarcophagi. The air is deathly cold and perfectly still.
+- Mushroom Forest: Towering bioluminescent fungi create an otherworldly forest canopy, shedding a sickly green light.
+- Underground Lake: A perfectly still, pitch-black body of water. The far shore is lost in darkness.
+- Spider Lair: Thick, sticky webs drape across every surface. Mummified remains of previous adventurers hang suspended.
+- Magma Chamber: A bridge of obsidian crosses a slow-moving river of molten rock. The heat is oppressive.
+- Ritual Circle: A circle of chalk and salt is drawn on the floor, surrounded by melted black candles and dried blood.
+- Treasure Vault: An ornate room with heavy iron doors, currently standing open. A few gold coins remain scattered on the floor.
+- Dining Hall: A long, rotting wooden table set with tarnished silver plates. Cobwebs drape the high-backed chairs.
+- Prison Cells: A row of rusted iron bars. Most doors are open, but some hold skeletal remains reaching through the bars.
+- Illusionist's Maze: Mirrors line the walls, creating endless reflections. The architecture seems to shift when you aren't looking.
+- Desecrated Shrine: A holy altar smashed to pieces and defiled with unholy symbols. A lingering sense of dread permeates the room.
+- Golem Forge: Inactive stone guardians stand in alcoves around a massive, cold forge. Tools of dwarven make lie scattered.
+- Chasm Bridge: A narrow, crumbling stone bridge spans a bottomless pit. Wind howls up from the dark abyss below.
+- Slime Pool: The floor dips into a large basin filled with a slow-churning, acidic green slime that bubbles quietly.
+- Warlock's Study: Desks covered in esoteric diagrams, star charts, and strange, preserved specimens in jars.
+- Echoing Chasm: A massive open space where every footstep echoes endlessly. The walls are sheer rock faces.

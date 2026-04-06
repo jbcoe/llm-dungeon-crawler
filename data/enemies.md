@@ -1,0 +1,26 @@
+# Enemy Types
+- Giant Rat: A rodent the size of a large dog, with matted, filthy fur and razor-sharp incisors.
+- Skeleton Warrior: The animated bones of a fallen soldier, still gripping a rusted sword and dented shield.
+- Cave Spider: A hairy arachnid with a leg span as wide as a man. It drops from the ceiling to ambush prey.
+- Goblin Scout: A small, malicious humanoid wielding a crude shiv. Fast and cowardly, preferring to strike from the shadows.
+- Gelatinous Cube: A nearly transparent block of acidic ooze that slowly sweeps the dungeon corridors clean of organic matter.
+- Shadow Wraith: A formless entity of pure darkness that drains the warmth and life force from its victims.
+- Fire Elemental: A swirling vortex of flame and ash, burning everything it touches.
+- Stone Golem: A hulking construct of animated rock, incredibly slow but capable of crushing a man with a single blow.
+- Cultist Initiate: A fanatic in dark robes, wielding a sacrificial dagger and muttering dark incantations.
+- Zombie: A reanimated corpse, driven by an insatiable hunger for living flesh.
+- Kobold Shaman: A small, reptilian creature that commands minor magical elements, usually fire or lightning.
+- Mimic: A terrifying shapeshifter currently disguised as a wooden treasure chest, waiting for a greedy adventurer.
+- Rust Monster: An insectoid beast that feeds on metal, turning swords and armor to dust with a touch of its antennae.
+- Basilisk: A low-slung reptilian beast whose gaze can turn a creature to stone.
+- Gargoyle: A winged stone demon that perches motionlessly until its prey approaches.
+- Ogre: A massive, brutish humanoid wielding a tree trunk as a club.
+- Banshee: The vengeful spirit of an elven woman, whose wail can cause immediate death.
+- Slime Pit: A colony of acidic blobs that merge and split, attacking in a relentless wave.
+- Clockwork Spider: A mechanical construct of brass and gears, equipped with razor-sharp legs and hidden blades.
+- Animated Armor: A suit of empty plate armor, driven by an unseen magical force to defend its post.
+- Vampire Bat: An unnaturally large bat that descends silently to drain the blood of its victims.
+- Mind Flayer (Illithid): A horrific humanoid with a squid-like head, capable of paralyzing minds with a glance.
+- Wyvern: A lesser cousin of the dragon, armed with a venomous stinger on its tail.
+- Ghoul: An undead creature that haunts graveyards and crypts, feeding on corpses and paralyzing the living with a touch.
+- Orc Grunt: A savage, muscular warrior wielding a crude battleaxe and driven by a thirst for battle.
