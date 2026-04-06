@@ -11,5 +11,5 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: astral-sh/setup-uv@v5
-    - name: Run pytest
-      run: uv run pytest
+    - name: Run pytest with coverage
+      run: uv run pytest --cov=game --cov-fail-under=80
