@@ -115,7 +115,7 @@ class GameEngine:
         for item in self.player.inventory:
             options.extend(item.name.lower().split())
 
-        return list(set(options))
+        return sorted(list(set(options)))
 
     def get_input(self, prompt: str) -> str:
         if self.mock_input is not None:
@@ -193,9 +193,12 @@ class GameEngine:
 
             log_event("PLAYER_ACTION", f"> {command}")
 
-            self.history.append(command)
-            if len(self.history) > self.max_history:
-                self.history = self.history[-self.max_history :]
+            if self.max_history <= 0:
+                self.history = []
+            else:
+                self.history.append(command)
+                if len(self.history) > self.max_history:
+                    self.history = self.history[-self.max_history :]
             parts = command.split()
             action = parts[0]
 
