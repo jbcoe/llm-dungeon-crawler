@@ -13,16 +13,79 @@ console = Console()
 
 
 class GameEngine:
-    def __init__(self, mock_input=None):
+    def __init__(self, mock_input=None, max_history: int = 1000):
         self.player = Player()
         self.floor = 1
         self.current_room = None
         self.running = True
         self.history = []
+        self.max_history = max_history
         self.mock_input = mock_input  # For testing purposes
         self.x = 0
         self.y = 0
         self.grid = {}
+        self.setup_readline()
+
+    def setup_readline(self):
+        if self.mock_input is not None:
+            return
+        try:
+            import readline
+            import sys
+
+            if (
+                sys.platform == "darwin"
+                and readline.__doc__
+                and "libedit" in readline.__doc__
+            ):
+                readline.parse_and_bind("bind ^I rl_complete")
+            else:
+                readline.parse_and_bind("tab: complete")
+
+            readline.set_history_length(self.max_history)
+
+            def completer(text, state):
+                options = self.get_completion_options()
+                matches = [opt for opt in options if opt.startswith(text.lower())]
+                if state < len(matches):
+                    return matches[state]
+                return None
+
+            readline.set_completer(completer)
+        except ImportError:
+            pass
+
+    def get_completion_options(self) -> list[str]:
+        options = [
+            "quit",
+            "exit",
+            "help",
+            "look",
+            "status",
+            "inventory",
+            "i",
+            "stats",
+            "me",
+            "go",
+            "attack",
+            "talk",
+            "take",
+            "use",
+            "equip",
+            "unequip",
+        ]
+        if self.current_room:
+            options.extend(self.current_room.exits)
+            for e in self.current_room.enemies:
+                options.extend(e.name.lower().split())
+            for n in self.current_room.npcs:
+                options.extend(n.name.lower().split())
+            for item in self.current_room.items:
+                options.extend(item.name.lower().split())
+        for item in self.player.inventory:
+            options.extend(item.name.lower().split())
+
+        return list(set(options))
 
     def get_input(self, prompt: str) -> str:
         if self.mock_input is not None:
@@ -101,6 +164,8 @@ class GameEngine:
             log_event("PLAYER_ACTION", f"> {command}")
 
             self.history.append(command)
+            if len(self.history) > self.max_history:
+                self.history = self.history[-self.max_history :]
             parts = command.split()
             action = parts[0]
 

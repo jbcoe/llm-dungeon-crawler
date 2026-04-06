@@ -1,4 +1,5 @@
 import sys
+import argparse
 import ollama
 from rich.console import Console
 from game.engine import GameEngine
@@ -47,8 +48,17 @@ def check_ollama_connection():
 
 
 def main():
+    parser = argparse.ArgumentParser(description="LLM Dungeon Crawler")
+    parser.add_argument(
+        "--history-length",
+        type=int,
+        default=1000,
+        help="Maximum number of commands to keep in history (default: 1000)",
+    )
+    args = parser.parse_args()
+
     check_ollama_connection()
-    engine = GameEngine()
+    engine = GameEngine(max_history=args.history_length)
     engine.start()
 
 

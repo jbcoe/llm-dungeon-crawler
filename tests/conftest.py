@@ -4,13 +4,14 @@ from unittest.mock import patch
 
 @pytest.fixture(autouse=True)
 def mock_ai_api():
-    """Mock the AI API calls globally for all tests."""
+    """Mock the AI API calls and console output globally for all tests."""
     with (
         patch("game.engine.generate_room") as mock_gen_room,
         patch("game.engine.narrate_combat") as mock_narrate,
         patch("game.engine.generate_npc_response") as mock_npc_resp,
         patch("game.engine.generate_intro") as mock_intro,
         patch("game.engine.narrate_item_use") as mock_item_use,
+        patch("game.engine.console.print") as mock_print,
     ):
         mock_gen_room.return_value = {
             "description": "A mocked room.",
@@ -25,4 +26,11 @@ def mock_ai_api():
         mock_intro.return_value = "Mocked intro text."
         mock_item_use.return_value = "Mocked item usage narration."
 
-        yield mock_gen_room, mock_narrate, mock_npc_resp, mock_intro, mock_item_use
+        yield (
+            mock_gen_room,
+            mock_narrate,
+            mock_npc_resp,
+            mock_intro,
+            mock_item_use,
+            mock_print,
+        )
