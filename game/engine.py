@@ -533,7 +533,7 @@ class GameEngine:
                     if self.player.equipped_weapon:
                         self.player.inventory.append(self.player.equipped_weapon)
                         console.print(
-                            "You unequiped "
+                            "You unequipped "
                             f"[bold cyan]{self.player.equipped_weapon.name}"
                             "[/bold cyan]."
                         )
@@ -557,7 +557,7 @@ class GameEngine:
             self.player.inventory.append(item)
             self.player.equipped_weapon = None
             console.print(
-                f"You unequiped [bold cyan]{item.name}[/bold cyan]. "
+                f"You unequipped [bold cyan]{item.name}[/bold cyan]. "
                 f"Your attack is now {self.player.total_attack}."
             )
         else:
