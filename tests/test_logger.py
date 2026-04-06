@@ -1,6 +1,7 @@
 """Unit tests for logger.py."""
 
 import logging
+import os
 from unittest.mock import patch
 
 from game.logger import log_event, logger, setup_logger
@@ -24,7 +25,7 @@ def test_setup_logger() -> None:
         mock_fh.assert_called()
 
     # Second call - we can add a real FileHandler to see the early exit
-    fake_handler = logging.FileHandler("/dev/null", delay=True)
+    fake_handler = logging.FileHandler(os.devnull, delay=True)
     logger.addHandler(fake_handler)
 
     with patch("os.makedirs") as mock_makedirs:

@@ -1,6 +1,7 @@
 """Unit tests for mechanics.py."""
 
-from unittest.mock import mock_open, patch
+import io
+from unittest.mock import patch
 
 import pytest
 
@@ -15,7 +16,9 @@ def test_load_data_success() -> None:
     with patch("importlib.resources.files") as mock_files:
         mock_joinpath = mock_files.return_value.joinpath.return_value
         mock_joinpath.is_file.return_value = True
-        mock_joinpath.open = mock_open(read_data=mock_file_content)
+        mock_joinpath.open.return_value.__enter__.return_value = io.StringIO(
+            mock_file_content
+        )
 
         result = load_data("test.md")
 

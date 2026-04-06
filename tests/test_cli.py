@@ -61,7 +61,7 @@ def test_check_ollama_connection_error(
     mock_print.assert_called()
 
 
-@patch("sys.argv", ["dungeon-crawler", "--history", "50"])
+@patch("sys.argv", ["dungeon-crawler", "--history-length", "50"])
 @patch("game.cli.check_ollama_connection")
 @patch("game.cli.GameEngine")
 def test_main(mock_engine_cls: MagicMock, mock_check_conn: MagicMock) -> None:
