@@ -105,8 +105,9 @@ def test_generate_intro(mock_load_prompt: MagicMock, mock_chat: MagicMock) -> No
 @patch("game.ai.chat")
 @patch("game.ai.load_prompt")
 def test_empty_ai_response(mock_load_prompt: MagicMock, mock_chat: MagicMock) -> None:
-    """Validate the game handles an empty Ollama response without crashing."""
+    """Validate the game raises ValueError on empty Ollama response."""
     mock_load_prompt.return_value = "Intro prompt"
     # Simulate an empty message content
     mock_chat.return_value = MagicMock(message=MagicMock(content=None))
-    assert generate_intro() == ""
+    with pytest.raises(ValueError, match="AI returned an empty response."):
+        generate_intro()

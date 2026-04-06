@@ -1,24 +1,32 @@
 """Game mechanics and data loading."""
 
 import importlib.resources
+import logging
 import random
+import re
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 def load_data(filename: str) -> list[dict[str, str]]:
-    """Load game data from a markdown file."""
+    """Load game data from a markdown file with robust parsing."""
     items: list[dict[str, str]] = []
-    filepath = importlib.resources.files("game.data").joinpath(filename)
-    if not filepath.is_file():
-        raise FileNotFoundError(f"Missing expected data file: {filename}")
-    with filepath.open("r", encoding="utf-8") as f:
-        for line in f:
-            if line.startswith("- "):
-                parts = line[2:].strip().split(":", 1)
-                if len(parts) == 2:
-                    items.append(
-                        {"name": parts[0].strip(), "description": parts[1].strip()}
-                    )
+    try:
+        filepath = importlib.resources.files("game.data").joinpath(filename)
+        if not filepath.is_file():
+            logger.error(f"Missing expected data file: {filename}")
+            return []
+
+        content = filepath.read_text(encoding="utf-8")
+        # Match lines starting with optional space, then - or *, then name : description
+        pattern = re.compile(r"^\s*[-*]\s*([^:]+):\s*(.*)$", re.MULTILINE)
+        matches = pattern.findall(content)
+        for name, desc in matches:
+            items.append({"name": name.strip(), "description": desc.strip()})
+    except Exception:
+        logger.exception(f"Error loading data from {filename}")
+
     return items
 
 
@@ -28,23 +36,62 @@ NPCS = load_data("npcs.md")
 ROOMS = load_data("rooms.md")
 
 
+def _get_item_mechanics(item_data: dict[str, str], floor: int) -> dict[str, Any]:
+    """Determine item mechanics based on its name and floor."""
+    name_lower = item_data["name"].lower()
+
+    # Define keywords for different item types
+    healing_keywords = ["potion", "salve", "elixir", "herb", "tonic"]
+    weapon_keywords = [
+        "sword",
+        "blade",
+        "axe",
+        "hammer",
+        "dagger",
+        "spear",
+        "mace",
+        "staff",
+    ]
+
+    effect_type = "none"
+    stat_effect = 0
+
+    if any(k in name_lower for k in healing_keywords):
+        effect_type = "healing"
+        stat_effect = 20 + (floor * 2)
+    elif any(k in name_lower for k in weapon_keywords):
+        effect_type = "weapon"
+        stat_effect = 5 + (floor * 2)
+
+    return {
+        "name": item_data["name"],
+        "description": item_data["description"],
+        "effect_type": effect_type,
+        "stat_effect": stat_effect,
+    }
+
+
 def generate_mechanics(floor: int) -> dict[str, Any]:
     """Generate the mechanical components of a room based on the current floor."""
     exits_pool = ["north", "south", "east", "west"]
-    exits = random.sample(exits_pool, random.randint(1, 4))
+    num_exits = random.randint(1, 4)
+    exits = random.sample(exits_pool, num_exits)
 
     room_type = (
         random.choice(ROOMS)
         if ROOMS
-        else {"name": "Generic Room", "description": "A stone room."}
+        else {"name": "Generic Room", "description": "A cold stone room."}
     )
 
     room_items: list[dict[str, Any]] = []
     room_enemies: list[dict[str, Any]] = []
     room_npcs: list[dict[str, Any]] = []
 
-    # 30% chance for an enemy
-    if ENEMIES and random.random() < 0.3:
+    # Probability logic
+    enemy_chance = 0.3 + (floor * 0.05)  # Difficulty increases with floors
+    enemy_chance = min(enemy_chance, 0.7)
+
+    if ENEMIES and random.random() < enemy_chance:
         enemy_data = random.choice(ENEMIES)
         hp = 10 + floor * 5
         attack = 3 + floor * 2
@@ -58,8 +105,8 @@ def generate_mechanics(floor: int) -> dict[str, Any]:
             }
         )
 
-    # 20% chance for NPC, typically not in same room as enemy
-    if NPCS and random.random() < 0.2 and not room_enemies:
+    # NPCs appear if there are no enemies (usually)
+    if NPCS and not room_enemies and random.random() < 0.2:
         npc_data = random.choice(NPCS)
         room_npcs.append(
             {
@@ -69,33 +116,11 @@ def generate_mechanics(floor: int) -> dict[str, Any]:
             }
         )
 
-    # 40% chance for an Item
-    if ITEMS and random.random() < 0.4:
+    # Items can appear anywhere
+    item_chance = 0.4
+    if ITEMS and random.random() < item_chance:
         item_data = random.choice(ITEMS)
-        effect_type = "none"
-        stat_effect = 0
-        name_lower = item_data["name"].lower()
-        if "potion" in name_lower or "salve" in name_lower:
-            effect_type = "healing"
-            stat_effect = 20
-        elif (
-            "sword" in name_lower
-            or "blade" in name_lower
-            or "axe" in name_lower
-            or "hammer" in name_lower
-            or "dagger" in name_lower
-        ):
-            effect_type = "weapon"
-            stat_effect = 5 + floor * 2
-
-        room_items.append(
-            {
-                "name": item_data["name"],
-                "description": item_data["description"],
-                "effect_type": effect_type,
-                "stat_effect": stat_effect,
-            }
-        )
+        room_items.append(_get_item_mechanics(item_data, floor))
 
     return {
         "room_type": room_type,

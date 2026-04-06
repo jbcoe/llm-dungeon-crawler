@@ -1,7 +1,8 @@
 """Core game engine responsible for the game loop and command handling."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from rich.console import Console
+from rich.markup import escape
 
 from game.ai import (
     generate_intro,
@@ -19,59 +20,106 @@ class CommandInfo(BaseModel):
 
     usage: str
     desc: str
-    aliases: list[str]
+    aliases: list[str] = Field(default_factory=list)
 
 
 COMMANDS: dict[str, CommandInfo] = {
-    "look": CommandInfo(
-        usage="look", desc="Describe the current room again", aliases=[]
-    ),
+    "look": CommandInfo(usage="look", desc="Describe the current room again"),
     "go": CommandInfo(
         usage="go <dir>",
-        desc="Move in a direction (north, south, etc.)",
-        aliases=[],
+        desc="Move in a direction (north, south, east, west)",
     ),
     "attack": CommandInfo(
         usage="attack <enemy>",
         desc="Attack an enemy in the room",
-        aliases=[],
     ),
     "talk": CommandInfo(
         usage="talk <npc>",
         desc="Start a conversation with an NPC",
-        aliases=[],
     ),
-    "take": CommandInfo(usage="take <item>", desc="Pick up an item", aliases=[]),
+    "take": CommandInfo(usage="take <item>", desc="Pick up an item"),
     "use": CommandInfo(
         usage="use <item>",
         desc="Use an item from your inventory",
-        aliases=[],
     ),
     "equip": CommandInfo(
         usage="equip <weapon>",
         desc="Equip a weapon from your inventory",
-        aliases=[],
     ),
     "unequip": CommandInfo(
         usage="unequip",
         desc="Unequip your current weapon",
-        aliases=[],
     ),
     "status": CommandInfo(
         usage="status",
         desc="Check your HP and inventory",
         aliases=["inventory", "i", "stats", "me"],
     ),
-    "help": CommandInfo(usage="help", desc="Show this help message", aliases=[]),
+    "help": CommandInfo(usage="help", desc="Show this help message"),
     "quit": CommandInfo(usage="quit", desc="Exit the game", aliases=["exit"]),
 }
 
-ALL_COMMAND_WORDS = []
-for cmd, info in COMMANDS.items():
-    ALL_COMMAND_WORDS.append(cmd)
-    ALL_COMMAND_WORDS.extend(info.aliases)
 
-console = Console()
+class GameUI:
+    """Handles all user interface interactions using Rich."""
+
+    def __init__(self, console: Console | None = None) -> None:
+        """Initialize the GameUI."""
+        self.console = console or Console()
+
+    def print(self, message: str, style: str = "", markup: bool = True) -> None:
+        """Print a message to the console with an optional style."""
+        if style:
+            self.console.print(message, style=style, markup=markup)
+        else:
+            self.console.print(message, markup=markup)
+
+    def print_italic(self, message: str) -> None:
+        """Print a message in italic style."""
+        self.print(message, style="italic", markup=False)
+
+    def print_error(self, message: str) -> None:
+        """Print an error message in red."""
+        self.print(message, style="red", markup=False)
+
+    def display_room(self, room: Room) -> None:
+        """Print the description and contents of the current room."""
+        self.print(
+            f"\n[bold cyan]Room Description:[/bold cyan] {escape(room.description)}"
+        )
+        self.print(f"[bold yellow]Exits:[/bold yellow] {', '.join(room.exits)}")
+
+        if room.items:
+            for item in room.items:
+                self.print(
+                    f"[bold green]Loot:[/bold green] {escape(item.name)} "
+                    f"- {escape(item.description)}"
+                )
+
+        if room.enemies:
+            for enemy in room.enemies:
+                self.print(
+                    f"[bold red]Enemy:[/bold red] {escape(enemy.name)} "
+                    f"(HP: {enemy.hp}/{enemy.max_hp}) - {escape(enemy.description)}"
+                )
+
+        if room.npcs:
+            for npc in room.npcs:
+                self.print(
+                    f"[bold blue]NPC:[/bold blue] {escape(npc.name)} "
+                    f"- {escape(npc.description)}"
+                )
+
+    def display_status(self, player: Player) -> None:
+        """Display player health, attack stats, and inventory."""
+        self.print(f"[bold magenta]HP:[/bold magenta] {player.hp}/{player.max_hp}")
+        weapon_name = player.equipped_weapon.name if player.equipped_weapon else "None"
+        self.print(
+            f"[bold magenta]Attack:[/bold magenta] {player.total_attack} "
+            f"(Base: {player.attack}, Weapon: {weapon_name})"
+        )
+        inventory = ", ".join([i.name for i in player.inventory]) or "Empty"
+        self.print(f"[bold magenta]Inventory:[/bold magenta] {inventory}")
 
 
 class GameEngine:
@@ -83,14 +131,15 @@ class GameEngine:
         """Initialize the game engine."""
         self.player = Player()
         self.floor = 1
-        self.current_room = None
+        self.current_room: Room | None = None
         self.running = True
-        self.history = []
+        self.history: list[str] = []
         self.max_history = max_history
-        self.mock_input = mock_input  # For testing purposes
+        self.mock_input = mock_input
         self.x = 0
         self.y = 0
-        self.grid = {}
+        self.grid: dict[tuple[int, int], Room] = {}
+        self.ui = GameUI()
         self.setup_readline()
 
     def setup_readline(self) -> None:
@@ -114,7 +163,9 @@ class GameEngine:
 
             def completer(text: str, state: int) -> str | None:
                 options = self.get_completion_options()
-                matches = [opt for opt in options if opt.startswith(text.lower())]
+                matches = [
+                    opt for opt in options if opt.lower().startswith(text.lower())
+                ]
                 if state < len(matches):
                     return matches[state]
                 return None
@@ -123,9 +174,22 @@ class GameEngine:
         except ImportError:
             pass
 
+    def display_room(self) -> None:
+        """Backward compatibility helper to display the current room."""
+        if self.current_room:
+            self.ui.display_room(self.current_room)
+
+    def display_status(self) -> None:
+        """Backward compatibility helper to display player status."""
+        self.ui.display_status(self.player)
+
     def get_completion_options(self) -> list[str]:
         """Generate a list of available words for autocompletion."""
-        options = list(ALL_COMMAND_WORDS)
+        options = []
+        for cmd, info in COMMANDS.items():
+            options.append(cmd)
+            options.extend(info.aliases)
+
         if self.current_room:
             options.extend(self.current_room.exits)
             for e in self.current_room.enemies:
@@ -152,13 +216,13 @@ class GameEngine:
         if self.mock_input is None:
             setup_logger()
         log_event("GAME_START", "Starting new game session.")
-        console.print("[bold green]Welcome to the AI Dungeon Crawler![/bold green]")
+        self.ui.print("Welcome to the AI Dungeon Crawler!", style="bold green")
         intro_text = generate_intro()
-        console.print(f"\n[italic]{intro_text}[/italic]\n")
-        self.enter_new_room()
+        self.ui.print_italic(f"\n{intro_text}\n")
+        self.enter_new_room("start")
         self.game_loop()
 
-    def enter_new_room(self, direction: str = "forward") -> None:
+    def enter_new_room(self, direction: str) -> None:
         """Handle moving into a new or existing room."""
         if direction == "north":
             self.y += 1
@@ -170,81 +234,59 @@ class GameEngine:
             self.x -= 1
 
         coord = (self.x, self.y)
-
-        console.print(f"[italic]You travel {direction}...[/italic]")
+        if direction != "start":
+            self.ui.print_italic(f"You travel {direction}...")
 
         if coord in self.grid:
-            console.print("[italic]You've been here before.[/italic]")
+            self.ui.print_italic("You've been here before.")
             self.current_room = self.grid[coord]
         else:
-            context = " ".join(self.history[-3:])
-            room_data = generate_room(self.floor, context)
-            self.current_room = Room(**room_data)
-            self.grid[coord] = self.current_room
+            context = (
+                " ".join(self.history[-3:])
+                if self.history
+                else "Beginning of the journey."
+            )
+            try:
+                room_data = generate_room(self.floor, context)
+                self.current_room = Room(**room_data)
+                self.grid[coord] = self.current_room
+            except Exception as e:
+                log_event("ERROR: room_generation", str(e))
+                # Fallback room
+                self.current_room = Room(
+                    description="A non-descript stone chamber.", exits=["north"]
+                )
+                self.grid[coord] = self.current_room
 
-        self.display_room()
-
-    def display_room(self) -> None:
-        """Print the description and contents of the current room."""
-        if not self.current_room:
-            return
-        console.print(
-            f"\n[bold cyan]Room Description:[/bold cyan] "
-            f"{self.current_room.description}"
-        )
-        console.print(
-            f"[bold yellow]Exits:[/bold yellow] {', '.join(self.current_room.exits)}"
-        )
-        if self.current_room.items:
-            for item in self.current_room.items:
-                console.print(
-                    f"[bold green]Loot:[/bold green] {item.name} - {item.description}"
-                )
-        if self.current_room.enemies:
-            for enemy in self.current_room.enemies:
-                console.print(
-                    f"[bold red]Enemy:[/bold red] {enemy.name} "
-                    f"(HP: {enemy.hp}/{enemy.max_hp}) - {enemy.description}"
-                )
-        if self.current_room.npcs:
-            for npc in self.current_room.npcs:
-                console.print(
-                    f"[bold blue]NPC:[/bold blue] {npc.name} - {npc.description}"
-                )
+        if self.current_room:
+            self.ui.display_room(self.current_room)
 
     def game_loop(self) -> None:
         """Run the main input-process-output loop."""
         while self.running and self.player.hp > 0:
-            console.print("")
-            command = self.get_input("> ").strip().lower()
-            if not command:
+            self.ui.print("")
+            command_line = self.get_input("> ").strip()
+            if not command_line:
                 continue
 
-            log_event("PLAYER_ACTION", f"> {command}")
+            log_event("PLAYER_ACTION", f"> {command_line}")
+            self.history.append(command_line)
+            if len(self.history) > self.max_history:
+                self.history.pop(0)
 
-            if self.max_history <= 0:
-                self.history = []
-            else:
-                self.history.append(command)
-                if len(self.history) > self.max_history:
-                    self.history = self.history[-self.max_history :]
-            parts = command.split()
+            parts = command_line.lower().split()
             action = parts[0]
 
             if action in ["quit", "exit"] and len(parts) == 1:
                 self.running = False
-                console.print("Thanks for playing!")
-                break
+                self.ui.print("Thanks for playing!")
             elif action == "help":
-                console.print("\n[bold]Available Commands:[/bold]", markup=True)
-                for _cmd, info in COMMANDS.items():
-                    console.print(
-                        f"  {info.usage.ljust(15)} - {info.desc}", markup=False
-                    )
+                self.handle_help()
             elif action == "look":
-                self.display_room()
+                if self.current_room:
+                    self.ui.display_room(self.current_room)
             elif action in ["status", "inventory", "i", "stats", "me"]:
-                self.display_status()
+                self.ui.display_status(self.player)
             elif action == "go":
                 self.handle_go(parts)
             elif action == "attack":
@@ -260,29 +302,20 @@ class GameEngine:
             elif action == "unequip":
                 self.handle_unequip()
             else:
-                console.print("Unknown command. Type 'help'.")
+                self.ui.print("Unknown command. Type 'help'.")
 
         if self.player.hp <= 0:
             log_event("GAME_END", "Game Over. Player died.")
-            console.print("[bold red]Game Over. You have died.[/bold red]")
+            self.ui.print("Game Over. You have died.", style="bold red")
 
-    def display_status(self) -> None:
-        """Display player health, attack stats, and inventory."""
-        console.print(
-            f"[bold magenta]HP:[/bold magenta] {self.player.hp}/{self.player.max_hp}"
-        )
-        weapon_name = (
-            self.player.equipped_weapon.name if self.player.equipped_weapon else "None"
-        )
-        console.print(
-            f"[bold magenta]Attack:[/bold magenta] {self.player.total_attack} "
-            f"(Base: {self.player.attack}, Weapon: {weapon_name})"
-        )
-        inventory = ", ".join([i.name for i in self.player.inventory]) or "Empty"
-        console.print(f"[bold magenta]Inventory:[/bold magenta] {inventory}")
+    def handle_help(self) -> None:
+        """Handle the help command."""
+        self.ui.print("\n[bold]Available Commands:[/bold]")
+        for info in COMMANDS.values():
+            self.ui.print(f"  {info.usage.ljust(15)} - {info.desc}")
 
     def handle_go(self, parts: list[str]) -> None:
-        """Process the 'go' command to move between rooms."""
+        """Handle the go command."""
         if not self.current_room:
             return
 
@@ -290,21 +323,19 @@ class GameEngine:
             direction = parts[1]
             if direction in self.current_room.exits:
                 if self.current_room.enemies:
-                    console.print(
-                        "[red]You can't leave while there are enemies here![/red]"
-                    )
+                    self.ui.print_error("You can't leave while there are enemies here!")
                 else:
                     self.enter_new_room(direction)
                     self.floor += 1
             else:
-                console.print(f"You cannot go '{direction}'.")
+                self.ui.print(f"You cannot go '{direction}'.")
         else:
-            console.print("Go where?")
+            self.ui.print("Go where?")
 
     def handle_attack(self, parts: list[str]) -> None:
-        """Process the 'attack' command to engage enemies."""
+        """Handle the attack command."""
         if not self.current_room or not self.current_room.enemies:
-            console.print("There is nothing to attack here.")
+            self.ui.print("There is nothing to attack here.")
             return
 
         target_name = (
@@ -320,7 +351,6 @@ class GameEngine:
             None,
         )
         if not enemy:
-            # try partial match
             enemy = next(
                 (
                     e
@@ -331,22 +361,21 @@ class GameEngine:
             )
 
         if not enemy:
-            console.print(f"No enemy named '{target_name}' here.")
+            self.ui.print(f"No enemy named '{target_name}' here.")
             return
 
         # Player attacks
         damage = self.player.total_attack
         enemy.hp -= damage
-        console.print(f"You attack {enemy.name} for {damage} damage!")
+        self.ui.print(f"You attack {enemy.name} for {damage} damage!")
 
         # Enemy attacks if still alive
-        enemy_damage = 0
         if enemy.hp > 0:
             enemy_damage = enemy.attack
             self.player.take_damage(enemy_damage)
-            console.print(f"{enemy.name} attacks you for {enemy_damage} damage!")
+            self.ui.print(f"{enemy.name} attacks you for {enemy_damage} damage!")
         else:
-            console.print(f"[bold red]You defeated {enemy.name}![/bold red]")
+            self.ui.print(f"You defeated {enemy.name}!", style="bold red")
             self.current_room.enemies.remove(enemy)
 
         # Narrative
@@ -357,16 +386,16 @@ class GameEngine:
             enemy_hp=max(0, enemy.hp),
             damage_dealt=damage,
         )
-        console.print(f"[italic]{narrative}[/italic]")
+        self.ui.print_italic(narrative)
 
     def handle_talk(self, parts: list[str]) -> None:
-        """Process the 'talk' command to converse with NPCs."""
+        """Handle the talk command."""
         if not self.current_room or not self.current_room.npcs:
-            console.print("There is no one here to talk to.")
+            self.ui.print("There is no one here to talk to.")
             return
 
         if len(parts) == 1:
-            console.print("Talk to whom?")
+            self.ui.print("Talk to whom?")
             return
 
         target_name = " ".join(parts[1:])
@@ -389,38 +418,35 @@ class GameEngine:
             )
 
         if not npc:
-            console.print(f"No one named '{target_name}' here.")
+            self.ui.print(f"No one named '{target_name}' here.")
             return
 
-        console.print(
-            f"[bold blue]You approach {npc.name}. "
-            "(Type 'bye' or 'leave' to end the conversation)[/bold blue]"
+        self.ui.print(
+            f"You approach {npc.name}. (Type 'bye' or 'leave' to end conversation)",
+            style="bold blue",
         )
+
         history = ""
         while True:
-            console.print("[cyan]You:[/cyan] ", end="")
-            player_msg = self.get_input("").strip()
+            player_msg = self.get_input("You: ").strip()
             if not player_msg:
                 continue
-            log_event("PLAYER_TALK", f"> {player_msg}")
 
             if player_msg.lower() in ["bye", "leave", "quit", "exit"]:
-                console.print(
-                    f"[bold blue]{npc.name} nods as you walk away.[/bold blue]"
-                )
+                self.ui.print(f"{npc.name} nods as you walk away.", style="bold blue")
                 break
 
             response = generate_npc_response(
                 npc.name, npc.dialogue_context, player_msg, history
             )
-            console.print(f"[bold blue]{npc.name}:[/bold blue] {response}")
+            self.ui.print(f"{npc.name}: {response}", style="bold blue")
 
             history += f"\nPlayer: {player_msg}\nNPC: {response}"
             if len(history) > 1000:
                 history = history[-1000:]
 
     def handle_take(self, parts: list[str]) -> None:
-        """Process the 'take' command to pick up items."""
+        """Handle the take command."""
         if not self.current_room:
             return
 
@@ -447,14 +473,14 @@ class GameEngine:
             if item:
                 self.player.inventory.append(item)
                 self.current_room.items.remove(item)
-                console.print(f"You took the {item.name}.")
+                self.ui.print(f"You took the {item.name}.")
             else:
-                console.print(f"No item named '{item_name}' here.")
+                self.ui.print(f"No item named '{item_name}' here.")
         else:
-            console.print("Take what?")
+            self.ui.print("Take what?")
 
     def handle_use(self, parts: list[str]) -> None:
-        """Process the 'use' command for items in inventory."""
+        """Handle the use command."""
         if len(parts) > 1:
             item_name = " ".join(parts[1:])
             item = next(
@@ -476,20 +502,14 @@ class GameEngine:
                 )
 
             if item:
-                if item.effect_type == "healing" and item.stat_effect:
-                    effect_amount = item.stat_effect
-                    self.player.heal(effect_amount)
-                    console.print(
-                        f"You used {item.name} and healed {effect_amount} HP."
+                if item.effect_type == "healing":
+                    self.player.heal(item.stat_effect)
+                    self.ui.print(
+                        f"You used {item.name} and healed {item.stat_effect} HP."
                     )
                     self.player.inventory.remove(item)
-                elif item.effect_type == "damage" and item.stat_effect:
-                    console.print(f"You can't use {item.name} like that yet.")
                 elif item.effect_type == "weapon":
-                    console.print(
-                        f"To use [bold cyan]{item.name}[/bold cyan], "
-                        "you must 'equip' it."
-                    )
+                    self.ui.print(f"To use {item.name}, you must 'equip' it.")
                 else:
                     room_desc = (
                         self.current_room.description
@@ -497,14 +517,14 @@ class GameEngine:
                         else "Unknown"
                     )
                     narration = narrate_item_use(item.name, item.description, room_desc)
-                    console.print(f"[italic]{narration}[/italic]")
+                    self.ui.print_italic(narration)
             else:
-                console.print(f"You don't have an item named '{item_name}'.")
+                self.ui.print(f"You don't have an item named '{item_name}'.")
         else:
-            console.print("Use what?")
+            self.ui.print("Use what?")
 
     def handle_equip(self, parts: list[str]) -> None:
-        """Process the 'equip' command to equip a weapon."""
+        """Handle the equip command."""
         if len(parts) > 1:
             item_name = " ".join(parts[1:])
             item = next(
@@ -529,33 +549,34 @@ class GameEngine:
                 if item.effect_type == "weapon":
                     if self.player.equipped_weapon:
                         self.player.inventory.append(self.player.equipped_weapon)
-                        console.print(
-                            "You unequipped "
-                            f"[bold cyan]{self.player.equipped_weapon.name}"
-                            "[/bold cyan]."
+                        self.ui.print(
+                            f"You unequipped {self.player.equipped_weapon.name}."
                         )
+
                     self.player.equipped_weapon = item
                     self.player.inventory.remove(item)
-                    console.print(
-                        f"You equipped [bold cyan]{item.name}[/bold cyan]! "
-                        f"Your attack is now {self.player.total_attack}."
+                    self.ui.print(
+                        f"You equipped {item.name}! Your attack is now "
+                        f"{self.player.total_attack}.",
+                        style="bold cyan",
                     )
                 else:
-                    console.print(f"You can't equip {item.name}. It's not a weapon.")
+                    self.ui.print(f"You can't equip {item.name}. It's not a weapon.")
             else:
-                console.print(f"You don't have an item named '{item_name}'.")
+                self.ui.print(f"You don't have an item named '{item_name}'.")
         else:
-            console.print("Equip what?")
+            self.ui.print("Equip what?")
 
     def handle_unequip(self) -> None:
-        """Process the 'unequip' command to remove the current weapon."""
+        """Handle the unequip command."""
         if self.player.equipped_weapon:
             item = self.player.equipped_weapon
             self.player.inventory.append(item)
             self.player.equipped_weapon = None
-            console.print(
-                f"You unequipped [bold cyan]{item.name}[/bold cyan]. "
-                f"Your attack is now {self.player.total_attack}."
+            self.ui.print(
+                f"You unequipped {item.name}. Your attack is now "
+                f"{self.player.total_attack}.",
+                style="bold cyan",
             )
         else:
-            console.print("You don't have a weapon equipped.")
+            self.ui.print("You don't have a weapon equipped.")

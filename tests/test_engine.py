@@ -3,7 +3,7 @@
 from typing import Any
 
 from game.engine import GameEngine
-from game.models import Room
+from game.models import NPC, Enemy, Item, Room
 
 
 def test_engine_initialization(mock_ai_api: Any) -> None:
@@ -28,13 +28,13 @@ def test_combat(mock_ai_api: Any) -> None:
         description="Test",
         exits=["north"],
         enemies=[
-            {
-                "name": "Slime",
-                "description": "test",
-                "hp": 10,
-                "max_hp": 10,
-                "attack": 2,
-            }
+            Enemy(
+                name="Slime",
+                description="test",
+                hp=10,
+                max_hp=10,
+                attack=2,
+            )
         ],
     )
     engine.current_room = room
@@ -55,11 +55,11 @@ def test_talk(mock_ai_api: Any) -> None:
         description="Test",
         exits=["north"],
         npcs=[
-            {
-                "name": "Merchant",
-                "description": "A merchant",
-                "dialogue_context": "Friendly",
-            }
+            NPC(
+                name="Merchant",
+                description="A merchant",
+                dialogue_context="Friendly",
+            )
         ],
     )
     engine.current_room = room
@@ -68,23 +68,24 @@ def test_talk(mock_ai_api: Any) -> None:
     mock_npc_resp.assert_called_once()
 
 
-def test_autocompletion_options() -> None:
+def test_autocompletion_options(mock_ai_api: Any) -> None:
     """Test that autocompletion returns expected command and entity words."""
+    _ = mock_ai_api
     engine = GameEngine(mock_input=["quit"])
     room = Room(
         description="Test Room",
         exits=["north", "east"],
         enemies=[
-            {
-                "name": "Dark Elf",
-                "description": "test",
-                "hp": 10,
-                "max_hp": 10,
-                "attack": 2,
-            }
+            Enemy(
+                name="Dark Elf",
+                description="test",
+                hp=10,
+                max_hp=10,
+                attack=2,
+            )
         ],
-        npcs=[{"name": "Old Wizard", "description": "test"}],
-        items=[{"name": "Health Potion", "description": "test"}],
+        npcs=[NPC(name="Old Wizard", description="test")],
+        items=[Item(name="Health Potion", description="test")],
     )
     engine.current_room = room
     engine.player.inventory = [type("MockItem", (), {"name": "Rusty Sword"})()]
@@ -113,8 +114,9 @@ def test_autocompletion_options() -> None:
     assert "sword" in options
 
 
-def test_history_tracking() -> None:
+def test_history_tracking(mock_ai_api: Any) -> None:
     """Test that player commands are correctly tracked in history."""
+    _ = mock_ai_api
     engine = GameEngine(mock_input=["look", "go north", "inventory", "quit"])
     engine.current_room = Room(description="Test", exits=["north"])
     # Mock enter_new_room so it doesn't try to generate a real room when moving
@@ -124,8 +126,9 @@ def test_history_tracking() -> None:
     assert engine.history == ["look", "go north", "inventory", "quit"]
 
 
-def test_history_truncation() -> None:
+def test_history_truncation(mock_ai_api: Any) -> None:
     """Test that command history is truncated according to max_history."""
+    _ = mock_ai_api
     engine = GameEngine(mock_input=["look", "look", "look", "quit"], max_history=2)
     engine.current_room = Room(description="Test", exits=["north"])
     engine.game_loop()

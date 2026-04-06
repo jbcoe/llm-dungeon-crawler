@@ -23,6 +23,8 @@ def test_setup_logger() -> None:
         setup_logger()
         mock_makedirs.assert_called_once_with("stories", exist_ok=True)
         mock_fh.assert_called()
+        # Clean up the mock handler that was added
+        logger.removeHandler(mock_fh.return_value)
 
     # Second call - we can add a real FileHandler to see the early exit
     fake_handler = logging.FileHandler(os.devnull, delay=True)

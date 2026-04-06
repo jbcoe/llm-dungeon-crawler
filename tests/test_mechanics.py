@@ -1,9 +1,6 @@
 """Unit tests for mechanics.py."""
 
-import io
 from unittest.mock import patch
-
-import pytest
 
 from game.mechanics import generate_mechanics, load_data
 
@@ -16,9 +13,7 @@ def test_load_data_success() -> None:
     with patch("importlib.resources.files") as mock_files:
         mock_joinpath = mock_files.return_value.joinpath.return_value
         mock_joinpath.is_file.return_value = True
-        mock_joinpath.open.return_value.__enter__.return_value = io.StringIO(
-            mock_file_content
-        )
+        mock_joinpath.read_text.return_value = mock_file_content
 
         result = load_data("test.md")
 
@@ -28,13 +23,13 @@ def test_load_data_success() -> None:
 
 
 def test_load_data_file_not_found() -> None:
-    """Ensure missing data files trigger FileNotFoundError explicitly."""
+    """Ensure missing data files trigger logging explicitly and return empty list."""
     with patch("importlib.resources.files") as mock_files:
         mock_joinpath = mock_files.return_value.joinpath.return_value
         mock_joinpath.is_file.return_value = False
 
-        with pytest.raises(FileNotFoundError):
-            load_data("missing.md")
+        result = load_data("missing.md")
+        assert result == []
 
 
 @patch("game.mechanics.ENEMIES", [{"name": "Goblin", "description": "Ugly"}])
@@ -43,12 +38,8 @@ def test_load_data_file_not_found() -> None:
 @patch("game.mechanics.ROOMS", [{"name": "Cave", "description": "Dark"}])
 def test_generate_mechanics() -> None:
     """Validate procedural room generation structure and probabilities."""
-    # Test generation and make sure we get the expected types and structure
-    # We patch random to make things predictable, or just check the structure.
-    with patch("random.random", return_value=0.1):  # force items/enemies/npcs to spawn
-        # Wait, if random is 0.1:
-        # Enemy chance 0.3 -> spawns
-        # NPC chance 0.2 -> won't spawn because enemy spawns!
+    # Test generation and make sure we get the expected types and structure.
+    with patch("random.random", return_value=0.1):  # force items and enemies to spawn
         mechanics = generate_mechanics(floor=1)
 
         assert mechanics["room_type"] == {"name": "Cave", "description": "Dark"}
