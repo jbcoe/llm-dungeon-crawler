@@ -34,6 +34,10 @@ python_files = ["test_*.py"]
 
 [tool.ruff.lint]
 extend-select = ["D"]
+ignore = [
+    "D203",  # one-blank-line-before-class (conflicts with D211)
+    "D212",  # multi-line-summary-first-line (conflicts with D213)
+]
 
 [tool.pyrefly]
 [tool.pyrefly.errors]
