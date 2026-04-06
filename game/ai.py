@@ -1,11 +1,12 @@
 """AI-powered narration and response generation."""
 
 from ollama import chat
+from typing import Any
 from game.logger import log_event
 from game.mechanics import generate_mechanics
 
 
-def generate_room(floor: int, previous_context: str = "") -> dict:
+def generate_room(floor: int, previous_context: str = "") -> dict[str, Any]:
     """Generate a room description using AI based on current mechanics."""
     mechanics = generate_mechanics(floor)
 

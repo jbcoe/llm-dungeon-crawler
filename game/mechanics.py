@@ -2,11 +2,12 @@
 
 import random
 import importlib.resources
+from typing import Any
 
 
 def load_data(filename: str) -> list[dict[str, str]]:
     """Load game data from a markdown file."""
-    items = []
+    items: list[dict[str, str]] = []
     filepath = importlib.resources.files("game.data").joinpath(filename)
     if not filepath.is_file():
         raise FileNotFoundError(f"Missing expected data file: {filename}")
@@ -27,7 +28,7 @@ NPCS = load_data("npcs.md")
 ROOMS = load_data("rooms.md")
 
 
-def generate_mechanics(floor: int) -> dict:
+def generate_mechanics(floor: int) -> dict[str, Any]:
     """Generate the mechanical components of a room based on the current floor."""
     exits_pool = ["north", "south", "east", "west"]
     exits = random.sample(exits_pool, random.randint(1, 4))
@@ -38,9 +39,9 @@ def generate_mechanics(floor: int) -> dict:
         else {"name": "Generic Room", "description": "A stone room."}
     )
 
-    room_items = []
-    room_enemies = []
-    room_npcs = []
+    room_items: list[dict[str, Any]] = []
+    room_enemies: list[dict[str, Any]] = []
+    room_npcs: list[dict[str, Any]] = []
 
     # 30% chance for an enemy
     if ENEMIES and random.random() < 0.3:

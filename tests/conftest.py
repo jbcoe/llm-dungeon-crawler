@@ -16,14 +16,15 @@ def mock_ai_api() -> Generator[tuple[Any, ...], None, None]:
         patch("game.engine.narrate_item_use") as mock_item_use,
         patch("game.engine.console.print") as mock_print,
     ):
-        mock_gen_room.return_value = {
+        mock_room_data: dict[str, Any] = {
             "description": "A mocked room.",
             "room_type": {"name": "Mock Room", "description": "A mocked room."},
             "exits": ["north", "south"],
-            "items": [],
-            "enemies": [],
-            "npcs": [],
+            "items": list[dict[str, Any]](),
+            "enemies": list[dict[str, Any]](),
+            "npcs": list[dict[str, Any]](),
         }
+        mock_gen_room.return_value = mock_room_data
         mock_narrate.return_value = "Mocked combat narration."
         mock_npc_resp.return_value = "Mocked NPC response."
         mock_intro.return_value = "Mocked intro text."

@@ -36,7 +36,7 @@ python_files = ["test_*.py"]
 extend-select = ["D"]
 
 [tool.pyrefly]
-typechecking = "strict"
 [tool.pyrefly.errors]
 unannotated-parameter = "error"
 unannotated-return = "error"
+implicit-any = "error"

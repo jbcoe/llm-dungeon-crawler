@@ -277,7 +277,7 @@ class GameEngine:
         inventory = ", ".join([i.name for i in self.player.inventory]) or "Empty"
         console.print(f"[bold magenta]Inventory:[/bold magenta] {inventory}")
 
-    def handle_go(self, parts: list) -> None:
+    def handle_go(self, parts: list[str]) -> None:
         """Process the 'go' command to move between rooms."""
         if not self.current_room:
             return
@@ -297,7 +297,7 @@ class GameEngine:
         else:
             console.print("Go where?")
 
-    def handle_attack(self, parts: list) -> None:
+    def handle_attack(self, parts: list[str]) -> None:
         """Process the 'attack' command to engage enemies."""
         if not self.current_room or not self.current_room.enemies:
             console.print("There is nothing to attack here.")
@@ -355,7 +355,7 @@ class GameEngine:
         )
         console.print(f"[italic]{narrative}[/italic]")
 
-    def handle_talk(self, parts: list) -> None:
+    def handle_talk(self, parts: list[str]) -> None:
         """Process the 'talk' command to converse with NPCs."""
         if not self.current_room or not self.current_room.npcs:
             console.print("There is no one here to talk to.")
@@ -414,7 +414,7 @@ class GameEngine:
             if len(history) > 1000:
                 history = history[-1000:]
 
-    def handle_take(self, parts: list) -> None:
+    def handle_take(self, parts: list[str]) -> None:
         """Process the 'take' command to pick up items."""
         if not self.current_room:
             return
@@ -448,7 +448,7 @@ class GameEngine:
         else:
             console.print("Take what?")
 
-    def handle_use(self, parts: list) -> None:
+    def handle_use(self, parts: list[str]) -> None:
         """Process the 'use' command for items in inventory."""
         if len(parts) > 1:
             item_name = " ".join(parts[1:])
@@ -497,7 +497,7 @@ class GameEngine:
         else:
             console.print("Use what?")
 
-    def handle_equip(self, parts: list) -> None:
+    def handle_equip(self, parts: list[str]) -> None:
         """Process the 'equip' command to equip a weapon."""
         if len(parts) > 1:
             item_name = " ".join(parts[1:])
