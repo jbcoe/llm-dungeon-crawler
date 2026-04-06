@@ -193,12 +193,14 @@ class GameEngine:
             f"{self.current_room.description}"
         )
         console.print(
-            f"[bold yellow]Exits:[/bold yellow] {', '.join(self.current_room.exits)}"
+            f"[bold yellow]Exits:[/bold yellow] "
+            f"{', '.join(self.current_room.exits)}"
         )
         if self.current_room.items:
             for item in self.current_room.items:
                 console.print(
-                    f"[bold green]Loot:[/bold green] {item.name} - {item.description}"
+                    f"[bold green]Loot:[/bold green] {item.name} - "
+                    f"{item.description}"
                 )
         if self.current_room.enemies:
             for enemy in self.current_room.enemies:
@@ -269,7 +271,8 @@ class GameEngine:
     def display_status(self) -> None:
         """Display player health, attack stats, and inventory."""
         console.print(
-            f"[bold magenta]HP:[/bold magenta] {self.player.hp}/{self.player.max_hp}"
+            f"[bold magenta]HP:[/bold magenta] "
+            f"{self.player.hp}/{self.player.max_hp}"
         )
         weapon_name = (
             self.player.equipped_weapon.name if self.player.equipped_weapon else "None"
