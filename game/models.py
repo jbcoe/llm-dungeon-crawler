@@ -1,9 +1,15 @@
 """Data models for game entities using Pydantic."""
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class Item(BaseModel):
+class GameModel(BaseModel):
+    """Base model for all game entities."""
+
+    model_config = ConfigDict(strict=True)
+
+
+class Item(GameModel):
     """Represents an item in the game."""
 
     name: str
@@ -11,16 +17,8 @@ class Item(BaseModel):
     stat_effect: int = Field(default=0)
     effect_type: str = Field(default="none")  # healing, damage, none, weapon
 
-    @field_validator("stat_effect", "effect_type", mode="before")
-    @classmethod
-    def set_defaults(cls, v: int | str | None, info: ValidationInfo) -> int | str:
-        """Set default values for optional fields if None is passed."""
-        if v is None:
-            return 0 if info.field_name == "stat_effect" else "none"
-        return v
 
-
-class Enemy(BaseModel):
+class Enemy(GameModel):
     """Represents an enemy character."""
 
     name: str
@@ -29,16 +27,8 @@ class Enemy(BaseModel):
     max_hp: int = Field(default=10)
     attack: int = Field(default=5)
 
-    @field_validator("hp", "max_hp", "attack", mode="before")
-    @classmethod
-    def set_enemy_defaults(cls, v: int | None, info: ValidationInfo) -> int:
-        """Set default values for enemy stats if None is passed."""
-        if v is None:
-            return 5 if info.field_name == "attack" else 10
-        return v
 
-
-class NPC(BaseModel):
+class NPC(GameModel):
     """Represents a non-player character."""
 
     name: str
@@ -46,7 +36,7 @@ class NPC(BaseModel):
     dialogue_context: str = Field(default="")
 
 
-class Room(BaseModel):
+class Room(GameModel):
     """Represents a room in the dungeon."""
 
     description: str
@@ -56,7 +46,7 @@ class Room(BaseModel):
     npcs: list[NPC] = Field(default_factory=list)
 
 
-class Player(BaseModel):
+class Player(GameModel):
     """Represents the player character and their state."""
 
     hp: int = Field(default=100)

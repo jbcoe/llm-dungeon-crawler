@@ -4,14 +4,10 @@ from game.models import Enemy, Item, Player
 
 
 def test_item_defaults() -> None:
-    """Ensure Item initializes default fields and handles None values."""
+    """Ensure Item initializes default fields and handles missing values."""
     item = Item(name="Test", description="Desc")
     assert item.stat_effect == 0
     assert item.effect_type == "none"
-
-    item2 = Item(name="Test2", description="Desc", stat_effect=None, effect_type=None)
-    assert item2.stat_effect == 0
-    assert item2.effect_type == "none"
 
     item3 = Item(name="Test3", description="Desc", stat_effect=10, effect_type="damage")
     assert item3.stat_effect == 10
@@ -19,16 +15,11 @@ def test_item_defaults() -> None:
 
 
 def test_enemy_defaults() -> None:
-    """Verify Enemy stats correctly default if omitted or None."""
+    """Verify Enemy stats correctly default if omitted."""
     enemy = Enemy(name="Test", description="Desc")
     assert enemy.hp == 10
     assert enemy.max_hp == 10
     assert enemy.attack == 5
-
-    enemy2 = Enemy(name="Test2", description="Desc", hp=None, max_hp=None, attack=None)
-    assert enemy2.hp == 10
-    assert enemy2.max_hp == 10
-    assert enemy2.attack == 5
 
     enemy3 = Enemy(name="Test3", description="Desc", hp=20, max_hp=30, attack=15)
     assert enemy3.hp == 20

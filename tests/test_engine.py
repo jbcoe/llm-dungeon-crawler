@@ -3,7 +3,7 @@
 from typing import Any
 
 from game.engine import GameEngine
-from game.models import Room
+from game.models import NPC, Enemy, Item, Room
 
 
 def test_engine_initialization(mock_ai_api: Any) -> None:
@@ -28,13 +28,13 @@ def test_combat(mock_ai_api: Any) -> None:
         description="Test",
         exits=["north"],
         enemies=[
-            {
-                "name": "Slime",
-                "description": "test",
-                "hp": 10,
-                "max_hp": 10,
-                "attack": 2,
-            }
+            Enemy(
+                name="Slime",
+                description="test",
+                hp=10,
+                max_hp=10,
+                attack=2,
+            )
         ],
     )
     engine.current_room = room
@@ -55,11 +55,11 @@ def test_talk(mock_ai_api: Any) -> None:
         description="Test",
         exits=["north"],
         npcs=[
-            {
-                "name": "Merchant",
-                "description": "A merchant",
-                "dialogue_context": "Friendly",
-            }
+            NPC(
+                name="Merchant",
+                description="A merchant",
+                dialogue_context="Friendly",
+            )
         ],
     )
     engine.current_room = room
@@ -76,16 +76,16 @@ def test_autocompletion_options(mock_ai_api: Any) -> None:
         description="Test Room",
         exits=["north", "east"],
         enemies=[
-            {
-                "name": "Dark Elf",
-                "description": "test",
-                "hp": 10,
-                "max_hp": 10,
-                "attack": 2,
-            }
+            Enemy(
+                name="Dark Elf",
+                description="test",
+                hp=10,
+                max_hp=10,
+                attack=2,
+            )
         ],
-        npcs=[{"name": "Old Wizard", "description": "test"}],
-        items=[{"name": "Health Potion", "description": "test"}],
+        npcs=[NPC(name="Old Wizard", description="test")],
+        items=[Item(name="Health Potion", description="test")],
     )
     engine.current_room = room
     engine.player.inventory = [type("MockItem", (), {"name": "Rusty Sword"})()]

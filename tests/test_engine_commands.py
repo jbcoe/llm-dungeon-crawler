@@ -34,7 +34,7 @@ def assert_printed(mock_print: MagicMock, expected_text: str) -> None:
 
 def test_display_room(engine: GameEngine) -> None:
     """Test that the 'look' command triggers the room rendering console output."""
-    with patch("game.engine.console.print") as mock_print:
+    with patch("game.engine.GameUI.print") as mock_print:
         engine.display_room()
         assert_printed(mock_print, "A test room")
         assert_printed(mock_print, "north, south")
@@ -45,7 +45,7 @@ def test_display_room(engine: GameEngine) -> None:
 
 def test_display_status(engine: GameEngine) -> None:
     """Test that the 'status' command outputs player HP, attack, and inventory."""
-    with patch("game.engine.console.print") as mock_print:
+    with patch("game.engine.GameUI.print") as mock_print:
         engine.display_status()
         assert_printed(mock_print, "HP:")
         assert_printed(mock_print, "100/100")
@@ -59,7 +59,7 @@ def test_handle_go(engine: GameEngine) -> None:
     """Ensure the 'go' command validates exits and handles enemy blockage correctly."""
     with (
         patch("game.engine.generate_room") as mock_gen_room,
-        patch("game.engine.console.print") as mock_print,
+        patch("game.engine.GameUI.print") as mock_print,
     ):
         mock_gen_room.return_value = {
             "description": "New room",
@@ -97,7 +97,7 @@ def test_handle_attack(engine: GameEngine) -> None:
     """Validate combat loops, entity targeting, and damage application."""
     with (
         patch("game.engine.narrate_combat", return_value="Slash!"),
-        patch("game.engine.console.print") as mock_print,
+        patch("game.engine.GameUI.print") as mock_print,
     ):
         # Test valid attack
         engine.handle_attack(["attack", "goblin"])
@@ -122,7 +122,7 @@ def test_handle_talk(engine: GameEngine) -> None:
     """Test NPC conversational loops and gracefully handling missing targets."""
     with (
         patch("game.engine.generate_npc_response", side_effect=["Hello", "Bye"]),
-        patch("game.engine.console.print") as mock_print,
+        patch("game.engine.GameUI.print") as mock_print,
         patch.object(engine, "get_input", side_effect=["hi", "leave"]),
     ):
         # Talk to merchant
@@ -131,7 +131,7 @@ def test_handle_talk(engine: GameEngine) -> None:
         assert_printed(mock_print, "Hello")
         assert_printed(mock_print, "Merchant nods as you walk away.")
 
-    with patch("game.engine.console.print") as mock_print:
+    with patch("game.engine.GameUI.print") as mock_print:
         # Talk to no one
         engine.handle_talk(["talk"])
         assert_printed(mock_print, "Talk to whom?")
@@ -143,7 +143,7 @@ def test_handle_talk(engine: GameEngine) -> None:
 
 def test_handle_take(engine: GameEngine) -> None:
     """Ensure items are removed from the room and placed into player inventory."""
-    with patch("game.engine.console.print") as mock_print:
+    with patch("game.engine.GameUI.print") as mock_print:
         # Take valid item
         engine.handle_take(["take", "key"])
         assert len(engine.player.inventory) == 1
@@ -168,7 +168,7 @@ def test_handle_equip(engine: GameEngine) -> None:
     )
     engine.player.inventory.append(weapon)
 
-    with patch("game.engine.console.print") as mock_print:
+    with patch("game.engine.GameUI.print") as mock_print:
         engine.handle_equip(["equip", "sword"])
         assert engine.player.equipped_weapon == weapon
         assert weapon not in engine.player.inventory
@@ -195,7 +195,7 @@ def test_handle_unequip(engine: GameEngine) -> None:
     )
     engine.player.equipped_weapon = weapon
 
-    with patch("game.engine.console.print") as mock_print:
+    with patch("game.engine.GameUI.print") as mock_print:
         engine.handle_unequip()
         assert engine.player.equipped_weapon is None
         assert weapon in engine.player.inventory
@@ -217,7 +217,7 @@ def test_handle_use(engine: GameEngine) -> None:
 
     with (
         patch("game.engine.narrate_item_use", return_value="Used!"),
-        patch("game.engine.console.print") as mock_print,
+        patch("game.engine.GameUI.print") as mock_print,
     ):
         engine.handle_use(["use", "potion"])
         assert engine.player.hp == 20
