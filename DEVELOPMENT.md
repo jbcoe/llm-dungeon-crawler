@@ -33,7 +33,7 @@ To work on this codebase using AI assistance, you should use the provided Docker
 
 The codebase is structured to separate deterministic mechanics from LLM flavor:
 - `game/mechanics.py`: Handles all stats, logic, and procedural generation based on tables.
-- `data/*.md`: Markdown lists containing definitions for enemies, items, NPCs, and rooms. Add new content here!
+- `game/data/*.md`: Markdown lists containing definitions for enemies, items, NPCs, and rooms. Add new content here!
 - `game/ai.py`: Connects to Ollama to generate atmospheric text based on the mechanics output.
 - `game/engine.py`: The core game loop, state management, and command parser.
 

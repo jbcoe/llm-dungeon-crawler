@@ -1,13 +1,13 @@
 import random
-import os
+import importlib.resources
 
 
 def load_data(filename):
     items = []
-    filepath = os.path.join(os.path.dirname(__file__), "..", "data", filename)
-    if not os.path.exists(filepath):
-        return items
-    with open(filepath, "r", encoding="utf-8") as f:
+    filepath = importlib.resources.files("game.data").joinpath(filename)
+    if not filepath.exists():
+        raise FileNotFoundError(f"Missing expected data file: {filename}")
+    with filepath.open("r", encoding="utf-8") as f:
         for line in f:
             if line.startswith("- "):
                 parts = line[2:].strip().split(":", 1)
