@@ -4,13 +4,7 @@ from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.markup import escape
 
-from game.ai import (
-    generate_intro,
-    generate_npc_response,
-    generate_room,
-    narrate_combat,
-    narrate_item_use,
-)
+from game.ai import AIGenerator
 from game.logger import log_event, setup_logger
 from game.models import Player, Room
 
@@ -126,10 +120,15 @@ class GameEngine:
     """Main game engine class managing state and logic."""
 
     def __init__(
-        self, mock_input: list[str] | None = None, max_history: int = 1000
+        self,
+        mock_input: list[str] | None = None,
+        max_history: int = 1000,
+        model: str = "gemma4:e4b",
     ) -> None:
         """Initialize the game engine."""
+        self.model = model
         self.player = Player()
+        self.ai = AIGenerator(model=model)
         self.floor = 1
         self.current_room: Room | None = None
         self.running = True
@@ -217,7 +216,7 @@ class GameEngine:
             setup_logger()
         log_event("GAME_START", "Starting new game session.")
         self.ui.print("Welcome to the AI Dungeon Crawler!", style="bold green")
-        intro_text = generate_intro()
+        intro_text = self.ai.generate_intro()
         self.ui.print_italic(f"\n{intro_text}\n")
         self.enter_new_room("start")
         self.game_loop()
@@ -247,7 +246,7 @@ class GameEngine:
                 else "Beginning of the journey."
             )
             try:
-                room_data = generate_room(self.floor, context)
+                room_data = self.ai.generate_room(self.floor, context)
                 self.current_room = Room(**room_data)
                 self.grid[coord] = self.current_room
             except Exception as e:
@@ -379,7 +378,7 @@ class GameEngine:
             self.current_room.enemies.remove(enemy)
 
         # Narrative
-        narrative = narrate_combat(
+        narrative = self.ai.narrate_combat(
             player_action="attacked with a weapon",
             player_hp=self.player.hp,
             enemy_name=enemy.name,
@@ -436,7 +435,7 @@ class GameEngine:
                 self.ui.print(f"{npc.name} nods as you walk away.", style="bold blue")
                 break
 
-            response = generate_npc_response(
+            response = self.ai.generate_npc_response(
                 npc.name, npc.dialogue_context, player_msg, history
             )
             self.ui.print(f"{npc.name}: {response}", style="bold blue")
@@ -516,7 +515,9 @@ class GameEngine:
                         if self.current_room
                         else "Unknown"
                     )
-                    narration = narrate_item_use(item.name, item.description, room_desc)
+                    narration = self.ai.narrate_item_use(
+                        item.name, item.description, room_desc
+                    )
                     self.ui.print_italic(narration)
             else:
                 self.ui.print(f"You don't have an item named '{item_name}'.")

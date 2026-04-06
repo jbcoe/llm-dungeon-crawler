@@ -4,14 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from game.ai import (
-    generate_intro,
-    generate_npc_response,
-    generate_room,
-    load_prompt,
-    narrate_combat,
-    narrate_item_use,
-)
+from game.ai import AIGenerator, load_prompt
 
 
 def test_load_prompt_missing() -> None:
@@ -20,9 +13,6 @@ def test_load_prompt_missing() -> None:
         mock_joinpath = mock_files.return_value.joinpath.return_value
         mock_joinpath.is_file.return_value = False
         with pytest.raises(FileNotFoundError):
-            # load_prompt is lru_cached, so we need to bypass the cache
-            # or just hit the missing file.
-            # Actually, since it's cached, we should pass a uniquely named missing file
             load_prompt("totally_missing_file_12345.md")
 
 
@@ -46,7 +36,7 @@ def test_generate_room(
     )
     mock_chat.return_value = MagicMock(message=MagicMock(content="AI Description"))
 
-    result = generate_room(floor=1, previous_context="Test Context")
+    result = AIGenerator().generate_room(floor=1, previous_context="Test Context")
     assert result["description"] == "AI Description"
 
 
@@ -57,7 +47,7 @@ def test_narrate_item_use(mock_load_prompt: MagicMock, mock_chat: MagicMock) -> 
     mock_load_prompt.return_value = "{item_name} {item_description} {room_context}"
     mock_chat.return_value = MagicMock(message=MagicMock(content="Item Used"))
 
-    result = narrate_item_use("Potion", "Heals", "Dark Room")
+    result = AIGenerator().narrate_item_use("Potion", "Heals", "Dark Room")
     assert result == "Item Used"
 
 
@@ -72,7 +62,7 @@ def test_generate_npc_response(
     )
     mock_chat.return_value = MagicMock(message=MagicMock(content="Hello traveler"))
 
-    result = generate_npc_response("Merchant", "Sells", "Hello", "None")
+    result = AIGenerator().generate_npc_response("Merchant", "Sells", "Hello", "None")
     assert result == "Hello traveler"
 
 
@@ -85,7 +75,7 @@ def test_narrate_combat(mock_load_prompt: MagicMock, mock_chat: MagicMock) -> No
     )
     mock_chat.return_value = MagicMock(message=MagicMock(content="Slash!"))
 
-    result = narrate_combat("attacks", 100, "Goblin", 10, 5)
+    result = AIGenerator().narrate_combat("attacks", 100, "Goblin", 10, 5)
     assert result == "Slash!"
 
 
@@ -98,7 +88,7 @@ def test_generate_intro(mock_load_prompt: MagicMock, mock_chat: MagicMock) -> No
         message=MagicMock(content="Welcome to the dungeon.")
     )
 
-    result = generate_intro()
+    result = AIGenerator().generate_intro()
     assert result == "Welcome to the dungeon."
 
 
@@ -110,4 +100,4 @@ def test_empty_ai_response(mock_load_prompt: MagicMock, mock_chat: MagicMock) ->
     # Simulate an empty message content
     mock_chat.return_value = MagicMock(message=MagicMock(content=None))
     with pytest.raises(ValueError, match="AI returned an empty response."):
-        generate_intro()
+        AIGenerator().generate_intro()
