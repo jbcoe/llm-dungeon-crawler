@@ -36,6 +36,21 @@ To work on this codebase using AI assistance, you should use the provided Docker
 
    You can now ask the agent to implement features, run tests, or debug code.
 
+## Non-Coding Development (Content Creation)
+
+The game is designed to be easily expanded by non-programmers. All flavor text, entities, environments, and core AI prompts are data-driven and can be updated without touching any Python code.
+
+All content is stored in the `game/data/` directory as standard Markdown (`.md`) files:
+
+1. **Entities and Environments:**
+   Lists of available enemies, items, NPCs, and rooms are defined in their respective markdown files (e.g., `enemies.md`, `rooms.md`). To add new content, add a new line following the established `- Name: Description` format. The game engine automatically loads these at runtime.
+
+1. **AI Prompts:**
+   All instructions sent to the Ollama LLM are stored as prompt templates (e.g., `prompts/room.md`, `prompts/combat.md`). These files control the tone, style, and rules the AI follows when generating narrative text.
+
+   - If you want the game to feel like a sci-fi adventure rather than dark fantasy, you can simply edit the prompt text in these files.
+   - The engine uses variables wrapped in curly braces (e.g., `{enemy_name}`). When modifying the prompt text, ensure these variables are kept intact so the engine can inject the correct context into the prompts.
+
 ## Working with the Code
 
 The codebase is structured to separate deterministic mechanics from LLM flavor:
