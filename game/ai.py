@@ -1,19 +1,6 @@
-import random
 from ollama import chat
 from .logger import log_event
 from .mechanics import generate_mechanics
-
-
-def _get_random_suggestions(filename: str, count: int = 3) -> str:
-    try:
-        with open(filename, "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f if line.strip().startswith("- ")]
-        if not lines:
-            return "None"
-        samples = random.sample(lines, min(count, len(lines)))
-        return "\n    ".join(samples)
-    except Exception:
-        return "None"
 
 
 def generate_room(floor: int, previous_context: str = "") -> dict:

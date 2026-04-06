@@ -10,8 +10,7 @@ Before you can play, you need the following installed on your host machine:
 
 1. **Python 3.12+**
 2. **uv** (Python package installer and resolver)
-3. **Docker** (for running the sandboxed development environment)
-4. **Ollama** (for running the local LLM)
+3. **Ollama** (for running the local LLM)
 
 ## Setup & Running the Game
 
@@ -27,15 +26,8 @@ Before you can play, you need the following installed on your host machine:
    ollama pull gemma4:e4b
    ```
 
-3. **Launch the Game Sandbox**
-   To ensure a clean environment, launch the game inside its Docker sandbox:
-   ```bash
-   ./scripts/gemini-sandbox.sh
-   ```
-   *Note: This sandbox uses the host network to communicate with your local Ollama instance.*
-
-4. **Play!**
-   Once inside the sandbox, start the game engine:
+3. **Play!**
+   Launch the game directly on your host machine:
    ```bash
    uv run main.py
    ```
