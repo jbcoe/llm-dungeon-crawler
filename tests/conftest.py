@@ -8,7 +8,7 @@ import pytest
 
 @pytest.fixture
 def mock_ai_api() -> Generator[tuple[Any, ...], None, None]:
-    """Mock the AI API calls and console output globally for all tests."""
+    """Mock the AI API calls and console output for tests."""
     with (
         patch("game.engine.generate_room") as mock_gen_room,
         patch("game.engine.narrate_combat") as mock_narrate,

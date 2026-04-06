@@ -24,8 +24,8 @@ def load_data(filename: str) -> list[dict[str, str]]:
         matches = pattern.findall(content)
         for name, desc in matches:
             items.append({"name": name.strip(), "description": desc.strip()})
-    except Exception as e:
-        logger.error(f"Error loading data from {filename}: {str(e)}")
+    except Exception:
+        logger.exception(f"Error loading data from {filename}")
 
     return items
 

@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, Field
 from rich.console import Console
+from rich.markup import escape
 
 from game.ai import (
     generate_intro,
@@ -66,43 +67,47 @@ class GameUI:
         """Initialize the GameUI."""
         self.console = console or Console()
 
-    def print(self, message: str, style: str = "") -> None:
+    def print(self, message: str, style: str = "", markup: bool = True) -> None:
         """Print a message to the console with an optional style."""
         if style:
-            self.console.print(f"[{style}]{message}[/{style}]")
+            self.console.print(message, style=style, markup=markup)
         else:
-            self.console.print(message)
+            self.console.print(message, markup=markup)
 
     def print_italic(self, message: str) -> None:
         """Print a message in italic style."""
-        self.print(message, "italic")
+        self.print(message, style="italic", markup=False)
 
     def print_error(self, message: str) -> None:
         """Print an error message in red."""
-        self.print(message, "red")
+        self.print(message, style="red", markup=False)
 
     def display_room(self, room: Room) -> None:
         """Print the description and contents of the current room."""
-        self.print(f"\n[bold cyan]Room Description:[/bold cyan] {room.description}")
+        self.print(
+            f"\n[bold cyan]Room Description:[/bold cyan] {escape(room.description)}"
+        )
         self.print(f"[bold yellow]Exits:[/bold yellow] {', '.join(room.exits)}")
 
         if room.items:
             for item in room.items:
                 self.print(
-                    f"[bold green]Loot:[/bold green] {item.name} - {item.description}"
+                    f"[bold green]Loot:[/bold green] {escape(item.name)} "
+                    f"- {escape(item.description)}"
                 )
 
         if room.enemies:
             for enemy in room.enemies:
                 self.print(
-                    f"[bold red]Enemy:[/bold red] {enemy.name} "
-                    f"(HP: {enemy.hp}/{enemy.max_hp}) - {enemy.description}"
+                    f"[bold red]Enemy:[/bold red] {escape(enemy.name)} "
+                    f"(HP: {enemy.hp}/{enemy.max_hp}) - {escape(enemy.description)}"
                 )
 
         if room.npcs:
             for npc in room.npcs:
                 self.print(
-                    f"[bold blue]NPC:[/bold blue] {npc.name} - {npc.description}"
+                    f"[bold blue]NPC:[/bold blue] {escape(npc.name)} "
+                    f"- {escape(npc.description)}"
                 )
 
     def display_status(self, player: Player) -> None:
@@ -272,7 +277,7 @@ class GameEngine:
             parts = command_line.lower().split()
             action = parts[0]
 
-            if action in ["quit", "exit"]:
+            if action in ["quit", "exit"] and len(parts) == 1:
                 self.running = False
                 self.ui.print("Thanks for playing!")
             elif action == "help":
@@ -297,23 +302,7 @@ class GameEngine:
             elif action == "unequip":
                 self.handle_unequip()
             else:
-                # Check for aliases
-                cmd_found = False
-                for cmd, info in COMMANDS.items():
-                    if action in info.aliases:
-                        # Re-dispatch with base command
-                        parts[0] = cmd
-                        # Let's just handle it here for simplicity.
-                        # 'status' and 'quit' have aliases in COMMANDS.
-                        if cmd == "status":
-                            self.ui.display_status(self.player)
-                        elif cmd == "quit":
-                            self.running = False
-                            self.ui.print("Thanks for playing!")
-                        cmd_found = True
-                        break
-                if not cmd_found:
-                    self.ui.print("Unknown command. Type 'help'.")
+                self.ui.print("Unknown command. Type 'help'.")
 
         if self.player.hp <= 0:
             log_event("GAME_END", "Game Over. Player died.")

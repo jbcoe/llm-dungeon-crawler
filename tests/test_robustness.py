@@ -75,7 +75,7 @@ def test_engine_fallback_on_bad_room_generation() -> None:
     """Test that the engine recovers if room generation fails."""
     with patch("game.engine.generate_room", side_effect=Exception("API failure")):
         engine = GameEngine(mock_input=["quit"])
-        # Patch enter_new_room to avoid other side effects
+        # Call enter_new_room to trigger room generation and the fallback logic
         engine.enter_new_room("start")
 
         assert engine.current_room is not None
@@ -88,7 +88,7 @@ def test_ui_abstraction() -> None:
     ui = GameUI(console=mock_console)
 
     ui.print("Hello", style="bold")
-    mock_console.print.assert_called_with("[bold]Hello[/bold]")
+    mock_console.print.assert_called_with("Hello", style="bold", markup=True)
 
     ui.print_error("Danger")
-    mock_console.print.assert_called_with("[red]Danger[/red]")
+    mock_console.print.assert_called_with("Danger", style="red", markup=False)
