@@ -9,20 +9,113 @@ from game.ai import (
 from game.logger import setup_logger, log_event
 from rich.console import Console
 
+COMMANDS = {
+    "look": {"usage": "look", "desc": "Describe the current room again", "aliases": []},
+    "go": {
+        "usage": "go <dir>",
+        "desc": "Move in a direction (north, south, etc.)",
+        "aliases": [],
+    },
+    "attack": {
+        "usage": "attack <enemy>",
+        "desc": "Attack an enemy in the room",
+        "aliases": [],
+    },
+    "talk": {
+        "usage": "talk <npc>",
+        "desc": "Start a conversation with an NPC",
+        "aliases": [],
+    },
+    "take": {"usage": "take <item>", "desc": "Pick up an item", "aliases": []},
+    "use": {
+        "usage": "use <item>",
+        "desc": "Use an item from your inventory",
+        "aliases": [],
+    },
+    "equip": {
+        "usage": "equip <weapon>",
+        "desc": "Equip a weapon from your inventory",
+        "aliases": [],
+    },
+    "unequip": {
+        "usage": "unequip",
+        "desc": "Unequip your current weapon",
+        "aliases": [],
+    },
+    "status": {
+        "usage": "status",
+        "desc": "Check your HP and inventory",
+        "aliases": ["inventory", "i", "stats", "me"],
+    },
+    "help": {"usage": "help", "desc": "Show this help message", "aliases": []},
+    "quit": {"usage": "quit", "desc": "Exit the game", "aliases": ["exit"]},
+}
+
+ALL_COMMAND_WORDS = []
+for cmd, info in COMMANDS.items():
+    ALL_COMMAND_WORDS.append(cmd)
+    ALL_COMMAND_WORDS.extend(info["aliases"])
+
 console = Console()
 
 
 class GameEngine:
-    def __init__(self, mock_input=None):
+    def __init__(self, mock_input=None, max_history: int = 1000):
         self.player = Player()
         self.floor = 1
         self.current_room = None
         self.running = True
         self.history = []
+        self.max_history = max_history
         self.mock_input = mock_input  # For testing purposes
         self.x = 0
         self.y = 0
         self.grid = {}
+        self.setup_readline()
+
+    def setup_readline(self):
+        if self.mock_input is not None:
+            return
+        try:
+            import readline
+            import sys
+
+            if (
+                sys.platform == "darwin"
+                and readline.__doc__
+                and "libedit" in readline.__doc__
+            ):
+                readline.parse_and_bind("bind ^I rl_complete")
+            else:
+                readline.parse_and_bind("tab: complete")
+
+            readline.set_history_length(self.max_history)
+
+            def completer(text, state):
+                options = self.get_completion_options()
+                matches = [opt for opt in options if opt.startswith(text.lower())]
+                if state < len(matches):
+                    return matches[state]
+                return None
+
+            readline.set_completer(completer)
+        except ImportError:
+            pass
+
+    def get_completion_options(self) -> list[str]:
+        options = list(ALL_COMMAND_WORDS)
+        if self.current_room:
+            options.extend(self.current_room.exits)
+            for e in self.current_room.enemies:
+                options.extend(e.name.lower().split())
+            for n in self.current_room.npcs:
+                options.extend(n.name.lower().split())
+            for item in self.current_room.items:
+                options.extend(item.name.lower().split())
+        for item in self.player.inventory:
+            options.extend(item.name.lower().split())
+
+        return sorted(list(set(options)))
 
     def get_input(self, prompt: str) -> str:
         if self.mock_input is not None:
@@ -100,7 +193,12 @@ class GameEngine:
 
             log_event("PLAYER_ACTION", f"> {command}")
 
-            self.history.append(command)
+            if self.max_history <= 0:
+                self.history = []
+            else:
+                self.history.append(command)
+                if len(self.history) > self.max_history:
+                    self.history = self.history[-self.max_history :]
             parts = command.split()
             action = parts[0]
 
@@ -110,37 +208,10 @@ class GameEngine:
                 break
             elif action == "help":
                 console.print("\n[bold]Available Commands:[/bold]", markup=True)
-                console.print(
-                    "  look            - Describe the current room again", markup=False
-                )
-                console.print(
-                    "  go <dir>        - Move in a direction (north, south, etc.)",
-                    markup=False,
-                )
-                console.print(
-                    "  attack <enemy>  - Attack an enemy in the room", markup=False
-                )
-                console.print(
-                    "  talk <npc>     - Start a conversation with an NPC", markup=False
-                )
-                console.print("  take <item>     - Pick up an item", markup=False)
-                console.print(
-                    "  use <item>      - Use an item from your inventory", markup=False
-                )
-                console.print(
-                    "  equip <weapon>  - Equip a weapon from your inventory",
-                    markup=False,
-                )
-                console.print(
-                    "  unequip         - Unequip your current weapon", markup=False
-                )
-                console.print(
-                    "  status          - Check your HP and inventory", markup=False
-                )
-                console.print(
-                    "  help            - Show this help message", markup=False
-                )
-                console.print("  quit            - Exit the game", markup=False)
+                for cmd, info in COMMANDS.items():
+                    console.print(
+                        f"  {info['usage'].ljust(15)} - {info['desc']}", markup=False
+                    )
             elif action == "look":
                 self.display_room()
             elif action in ["status", "inventory", "i", "stats", "me"]:
