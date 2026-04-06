@@ -1,7 +1,7 @@
 """Game mechanics and data loading."""
 
-import random
 import importlib.resources
+import random
 from typing import Any
 
 

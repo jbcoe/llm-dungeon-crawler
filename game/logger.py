@@ -1,7 +1,7 @@
 """Logging utilities for game events and story generation."""
 
-import logging
 import datetime
+import logging
 import os
 
 logger = logging.getLogger("game_story")

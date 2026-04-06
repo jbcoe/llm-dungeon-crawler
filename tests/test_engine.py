@@ -1,6 +1,7 @@
 """Tests for the game engine logic."""
 
 from typing import Any
+
 from game.engine import GameEngine
 from game.models import Room
 
