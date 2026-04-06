@@ -34,3 +34,9 @@ python_files = ["test_*.py"]
 
 [tool.ruff.lint]
 extend-select = ["D"]
+
+[tool.pyrefly]
+[tool.pyrefly.errors]
+unannotated-parameter = "error"
+unannotated-return = "error"
+implicit-any = "error"

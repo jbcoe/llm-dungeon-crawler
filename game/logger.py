@@ -9,7 +9,7 @@ logger.setLevel(logging.INFO)
 logger.addHandler(logging.NullHandler())
 
 
-def setup_logger():
+def setup_logger() -> None:
     """Initialize the file logger for the game session."""
     # Remove NullHandler if it's there
     for handler in logger.handlers:
@@ -32,6 +32,6 @@ def setup_logger():
     logger.addHandler(fh)
 
 
-def log_event(event_type: str, details: str):
+def log_event(event_type: str, details: str) -> None:
     """Log a specific game event with details."""
     logger.info(f"[{event_type}]\n{details}\n{'-' * 40}")

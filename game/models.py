@@ -1,6 +1,6 @@
 """Data models for game entities using Pydantic."""
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, ValidationInfo
 
 
 class Item(BaseModel):
@@ -13,7 +13,7 @@ class Item(BaseModel):
 
     @field_validator("stat_effect", "effect_type", mode="before")
     @classmethod
-    def set_defaults(cls, v, info):
+    def set_defaults(cls, v: int | str | None, info: ValidationInfo) -> int | str:
         """Set default values for optional fields."""
         if v is None:
             return 0 if info.field_name == "stat_effect" else "none"
@@ -31,7 +31,7 @@ class Enemy(BaseModel):
 
     @field_validator("hp", "max_hp", "attack", mode="before")
     @classmethod
-    def set_enemy_defaults(cls, v, info):
+    def set_enemy_defaults(cls, v: int | None, info: ValidationInfo) -> int:
         """Set default values for enemy stats."""
         if v is None:
             return 5 if info.field_name == "attack" else 10
@@ -75,10 +75,10 @@ class Player(BaseModel):
         )
         return self.attack + bonus
 
-    def take_damage(self, amount: int):
+    def take_damage(self, amount: int) -> None:
         """Reduce player HP by the specified amount."""
         self.hp = max(0, self.hp - amount)
 
-    def heal(self, amount: int):
+    def heal(self, amount: int) -> None:
         """Increase player HP by the specified amount, up to max HP."""
         self.hp = min(self.max_hp, self.hp + amount)

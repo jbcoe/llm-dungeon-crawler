@@ -10,53 +10,65 @@ from game.ai import (
 )
 from game.logger import setup_logger, log_event
 from rich.console import Console
+from pydantic import BaseModel
 
-COMMANDS = {
-    "look": {"usage": "look", "desc": "Describe the current room again", "aliases": []},
-    "go": {
-        "usage": "go <dir>",
-        "desc": "Move in a direction (north, south, etc.)",
-        "aliases": [],
-    },
-    "attack": {
-        "usage": "attack <enemy>",
-        "desc": "Attack an enemy in the room",
-        "aliases": [],
-    },
-    "talk": {
-        "usage": "talk <npc>",
-        "desc": "Start a conversation with an NPC",
-        "aliases": [],
-    },
-    "take": {"usage": "take <item>", "desc": "Pick up an item", "aliases": []},
-    "use": {
-        "usage": "use <item>",
-        "desc": "Use an item from your inventory",
-        "aliases": [],
-    },
-    "equip": {
-        "usage": "equip <weapon>",
-        "desc": "Equip a weapon from your inventory",
-        "aliases": [],
-    },
-    "unequip": {
-        "usage": "unequip",
-        "desc": "Unequip your current weapon",
-        "aliases": [],
-    },
-    "status": {
-        "usage": "status",
-        "desc": "Check your HP and inventory",
-        "aliases": ["inventory", "i", "stats", "me"],
-    },
-    "help": {"usage": "help", "desc": "Show this help message", "aliases": []},
-    "quit": {"usage": "quit", "desc": "Exit the game", "aliases": ["exit"]},
+
+class CommandInfo(BaseModel):
+    """Type definition for a command in the engine."""
+
+    usage: str
+    desc: str
+    aliases: list[str]
+
+
+COMMANDS: dict[str, CommandInfo] = {
+    "look": CommandInfo(
+        usage="look", desc="Describe the current room again", aliases=[]
+    ),
+    "go": CommandInfo(
+        usage="go <dir>",
+        desc="Move in a direction (north, south, etc.)",
+        aliases=[],
+    ),
+    "attack": CommandInfo(
+        usage="attack <enemy>",
+        desc="Attack an enemy in the room",
+        aliases=[],
+    ),
+    "talk": CommandInfo(
+        usage="talk <npc>",
+        desc="Start a conversation with an NPC",
+        aliases=[],
+    ),
+    "take": CommandInfo(usage="take <item>", desc="Pick up an item", aliases=[]),
+    "use": CommandInfo(
+        usage="use <item>",
+        desc="Use an item from your inventory",
+        aliases=[],
+    ),
+    "equip": CommandInfo(
+        usage="equip <weapon>",
+        desc="Equip a weapon from your inventory",
+        aliases=[],
+    ),
+    "unequip": CommandInfo(
+        usage="unequip",
+        desc="Unequip your current weapon",
+        aliases=[],
+    ),
+    "status": CommandInfo(
+        usage="status",
+        desc="Check your HP and inventory",
+        aliases=["inventory", "i", "stats", "me"],
+    ),
+    "help": CommandInfo(usage="help", desc="Show this help message", aliases=[]),
+    "quit": CommandInfo(usage="quit", desc="Exit the game", aliases=["exit"]),
 }
 
 ALL_COMMAND_WORDS = []
 for cmd, info in COMMANDS.items():
     ALL_COMMAND_WORDS.append(cmd)
-    ALL_COMMAND_WORDS.extend(info["aliases"])
+    ALL_COMMAND_WORDS.extend(info.aliases)
 
 console = Console()
 
@@ -64,7 +76,9 @@ console = Console()
 class GameEngine:
     """Main game engine class managing state and logic."""
 
-    def __init__(self, mock_input=None, max_history: int = 1000):
+    def __init__(
+        self, mock_input: list[str] | None = None, max_history: int = 1000
+    ) -> None:
         """Initialize the game engine."""
         self.player = Player()
         self.floor = 1
@@ -78,7 +92,7 @@ class GameEngine:
         self.grid = {}
         self.setup_readline()
 
-    def setup_readline(self):
+    def setup_readline(self) -> None:
         """Configure readline for command completion and history."""
         if self.mock_input is not None:
             return
@@ -97,7 +111,7 @@ class GameEngine:
 
             readline.set_history_length(self.max_history)
 
-            def completer(text, state):
+            def completer(text: str, state: int) -> str | None:
                 options = self.get_completion_options()
                 matches = [opt for opt in options if opt.startswith(text.lower())]
                 if state < len(matches):
@@ -132,7 +146,7 @@ class GameEngine:
             return "quit"
         return input(prompt)
 
-    def start(self):
+    def start(self) -> None:
         """Start the game session."""
         if self.mock_input is None:
             setup_logger()
@@ -143,7 +157,7 @@ class GameEngine:
         self.enter_new_room()
         self.game_loop()
 
-    def enter_new_room(self, direction: str = "forward"):
+    def enter_new_room(self, direction: str = "forward") -> None:
         """Handle moving into a new or existing room."""
         if direction == "north":
             self.y += 1
@@ -169,7 +183,7 @@ class GameEngine:
 
         self.display_room()
 
-    def display_room(self):
+    def display_room(self) -> None:
         """Print the description and contents of the current room."""
         if not self.current_room:
             return
@@ -195,7 +209,7 @@ class GameEngine:
                     f"[bold blue]NPC:[/bold blue] {npc.name} - {npc.description}"
                 )
 
-    def game_loop(self):
+    def game_loop(self) -> None:
         """Run the main input-process-output loop."""
         while self.running and self.player.hp > 0:
             console.print("")
@@ -222,7 +236,7 @@ class GameEngine:
                 console.print("\n[bold]Available Commands:[/bold]", markup=True)
                 for cmd, info in COMMANDS.items():
                     console.print(
-                        f"  {info['usage'].ljust(15)} - {info['desc']}", markup=False
+                        f"  {info.usage.ljust(15)} - {info.desc}", markup=False
                     )
             elif action == "look":
                 self.display_room()
@@ -249,7 +263,7 @@ class GameEngine:
             log_event("GAME_END", "Game Over. Player died.")
             console.print("[bold red]Game Over. You have died.[/bold red]")
 
-    def display_status(self):
+    def display_status(self) -> None:
         """Display player health, attack stats, and inventory."""
         console.print(
             f"[bold magenta]HP:[/bold magenta] {self.player.hp}/{self.player.max_hp}"
@@ -263,7 +277,7 @@ class GameEngine:
         inventory = ", ".join([i.name for i in self.player.inventory]) or "Empty"
         console.print(f"[bold magenta]Inventory:[/bold magenta] {inventory}")
 
-    def handle_go(self, parts: list):
+    def handle_go(self, parts: list[str]) -> None:
         """Process the 'go' command to move between rooms."""
         if not self.current_room:
             return
@@ -283,7 +297,7 @@ class GameEngine:
         else:
             console.print("Go where?")
 
-    def handle_attack(self, parts: list):
+    def handle_attack(self, parts: list[str]) -> None:
         """Process the 'attack' command to engage enemies."""
         if not self.current_room or not self.current_room.enemies:
             console.print("There is nothing to attack here.")
@@ -341,7 +355,7 @@ class GameEngine:
         )
         console.print(f"[italic]{narrative}[/italic]")
 
-    def handle_talk(self, parts: list):
+    def handle_talk(self, parts: list[str]) -> None:
         """Process the 'talk' command to converse with NPCs."""
         if not self.current_room or not self.current_room.npcs:
             console.print("There is no one here to talk to.")
@@ -400,7 +414,7 @@ class GameEngine:
             if len(history) > 1000:
                 history = history[-1000:]
 
-    def handle_take(self, parts: list):
+    def handle_take(self, parts: list[str]) -> None:
         """Process the 'take' command to pick up items."""
         if not self.current_room:
             return
@@ -434,7 +448,7 @@ class GameEngine:
         else:
             console.print("Take what?")
 
-    def handle_use(self, parts: list):
+    def handle_use(self, parts: list[str]) -> None:
         """Process the 'use' command for items in inventory."""
         if len(parts) > 1:
             item_name = " ".join(parts[1:])
@@ -483,7 +497,7 @@ class GameEngine:
         else:
             console.print("Use what?")
 
-    def handle_equip(self, parts: list):
+    def handle_equip(self, parts: list[str]) -> None:
         """Process the 'equip' command to equip a weapon."""
         if len(parts) > 1:
             item_name = " ".join(parts[1:])
@@ -524,7 +538,7 @@ class GameEngine:
         else:
             console.print("Equip what?")
 
-    def handle_unequip(self):
+    def handle_unequip(self) -> None:
         """Process the 'unequip' command to remove the current weapon."""
         if self.player.equipped_weapon:
             item = self.player.equipped_weapon

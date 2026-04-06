@@ -1,10 +1,11 @@
 """Tests for the game engine logic."""
 
+from typing import Any
 from game.engine import GameEngine
 from game.models import Room
 
 
-def test_engine_initialization(mock_ai_api):
+def test_engine_initialization(mock_ai_api: Any) -> None:
     """Test that the engine initializes with correct player state."""
     mock_gen_room, _, _, _, _, _ = mock_ai_api
     engine = GameEngine(mock_input=["quit"])
@@ -18,7 +19,7 @@ def test_engine_initialization(mock_ai_api):
     mock_gen_room.assert_called_once()
 
 
-def test_combat(mock_ai_api):
+def test_combat(mock_ai_api: Any) -> None:
     """Test combat mechanics and enemy death."""
     _, mock_narrate, _, _, _, _ = mock_ai_api
     engine = GameEngine(mock_input=["attack slime", "quit"])
@@ -45,7 +46,7 @@ def test_combat(mock_ai_api):
     mock_narrate.assert_called_once()
 
 
-def test_talk(mock_ai_api):
+def test_talk(mock_ai_api: Any) -> None:
     """Test NPC interaction and dialogue."""
     _, _, mock_npc_resp, _, _, _ = mock_ai_api
     engine = GameEngine(mock_input=["talk merchant", "hello", "bye", "quit"])
@@ -66,7 +67,7 @@ def test_talk(mock_ai_api):
     mock_npc_resp.assert_called_once()
 
 
-def test_autocompletion_options():
+def test_autocompletion_options() -> None:
     """Test that autocompletion returns expected command and entity words."""
     engine = GameEngine(mock_input=["quit"])
     room = Room(
@@ -111,7 +112,7 @@ def test_autocompletion_options():
     assert "sword" in options
 
 
-def test_history_tracking():
+def test_history_tracking() -> None:
     """Test that player commands are correctly tracked in history."""
     engine = GameEngine(mock_input=["look", "go north", "inventory", "quit"])
     engine.current_room = Room(description="Test", exits=["north"])
@@ -122,7 +123,7 @@ def test_history_tracking():
     assert engine.history == ["look", "go north", "inventory", "quit"]
 
 
-def test_history_truncation():
+def test_history_truncation() -> None:
     """Test that command history is truncated according to max_history."""
     engine = GameEngine(mock_input=["look", "look", "look", "quit"], max_history=2)
     engine.current_room = Room(description="Test", exits=["north"])

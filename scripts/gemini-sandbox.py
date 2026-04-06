@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 
-def main():
+def main() -> None:
     """Provide the main entry point for the Gemini sandbox script."""
     parser = argparse.ArgumentParser(description="Run Gemini CLI in a Docker sandbox.")
     parser.add_argument(
@@ -24,7 +24,7 @@ def main():
 
     args = parser.parse_args()
 
-    def log(msg):
+    def log(msg: str) -> None:
         """Log a message if verbose mode is enabled."""
         if args.verbose:
             print(msg)
