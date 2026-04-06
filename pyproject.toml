@@ -1,11 +1,11 @@
 [project]
 name = "llm-dungeon-crawler"
 version = "0.1.0"
-description = "A text-based dungeon crawler powered by Gemini API"
+description = "A text-based dungeon crawler powered by an ollama hosted LLM"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "google-genai>=1.68.0",
+    "ollama>=0.2.1",
     "rich>=14.3.3",
     "pydantic>=2.12.5",
 ]

@@ -2,21 +2,21 @@ from game.engine import GameEngine
 from game.models import Room
 
 
-def test_engine_initialization(mock_gemini_api):
-    mock_gen_room, _, _, _, _ = mock_gemini_api
+def test_engine_initialization(mock_ai_api):
+    mock_gen_room, _, _, _, _ = mock_ai_api
     engine = GameEngine(mock_input=["quit"])
     engine.start()
 
     assert engine.player.hp == 100
     assert engine.floor == 1
     assert engine.current_room is not None
-    assert engine.current_room.description == "A mocked room for testing."
+    assert engine.current_room.description == "A mocked room."
     assert "north" in engine.current_room.exits
     mock_gen_room.assert_called_once()
 
 
-def test_combat(mock_gemini_api):
-    _, mock_narrate, _, _, _ = mock_gemini_api
+def test_combat(mock_ai_api):
+    _, mock_narrate, _, _, _ = mock_ai_api
     engine = GameEngine(mock_input=["attack slime", "quit"])
     room = Room(
         description="Test",
@@ -41,8 +41,8 @@ def test_combat(mock_gemini_api):
     mock_narrate.assert_called_once()
 
 
-def test_talk(mock_gemini_api):
-    _, _, mock_npc_resp, _, _ = mock_gemini_api
+def test_talk(mock_ai_api):
+    _, _, mock_npc_resp, _, _ = mock_ai_api
     engine = GameEngine(mock_input=["talk merchant", "hello", "bye", "quit"])
     room = Room(
         description="Test",

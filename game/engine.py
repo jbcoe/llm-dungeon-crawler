@@ -1,12 +1,12 @@
-from .models import Player, Room
-from .gemini import (
+from game.models import Player, Room
+from game.ai import (
     generate_room,
     narrate_combat,
     generate_npc_response,
     generate_intro,
     narrate_item_use,
 )
-from .logger import setup_logger, log_event
+from game.logger import setup_logger, log_event
 from rich.console import Console
 
 console = Console()
@@ -60,16 +60,9 @@ class GameEngine:
             self.current_room = self.grid[coord]
         else:
             context = " ".join(self.history[-3:])
-            try:
-                room_data = generate_room(self.floor, context)
-                self.current_room = Room(**room_data)
-                self.grid[coord] = self.current_room
-            except Exception as e:
-                console.print(f"[red]Error generating room: {e}[/red]")
-                self.current_room = Room(
-                    description="An empty, buggy room.", exits=["north"]
-                )
-                self.grid[coord] = self.current_room
+            room_data = generate_room(self.floor, context)
+            self.current_room = Room(**room_data)
+            self.grid[coord] = self.current_room
 
         self.display_room()
 

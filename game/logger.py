@@ -30,4 +30,4 @@ def setup_logger():
 
 
 def log_event(event_type: str, details: str):
-    logger.info(f"[{event_type}]\n{details}\n{'-'*40}")
+    logger.info(f"[{event_type}]\n{details}\n{'-' * 40}")
