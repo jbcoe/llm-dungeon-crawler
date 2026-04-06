@@ -13,7 +13,8 @@ def mock_ai_api():
         patch("game.engine.narrate_item_use") as mock_item_use,
     ):
         mock_gen_room.return_value = {
-            "description": "A mocked room for testing.",
+            "description": "A mocked room.",
+            "room_type": {"name": "Mock Room", "description": "A mocked room."},
             "exits": ["north", "south"],
             "items": [],
             "enemies": [],

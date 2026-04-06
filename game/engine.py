@@ -60,16 +60,9 @@ class GameEngine:
             self.current_room = self.grid[coord]
         else:
             context = " ".join(self.history[-3:])
-            try:
-                room_data = generate_room(self.floor, context)
-                self.current_room = Room(**room_data)
-                self.grid[coord] = self.current_room
-            except Exception as e:
-                console.print(f"[red]Error generating room: {e}[/red]")
-                self.current_room = Room(
-                    description="An empty, buggy room.", exits=["north"]
-                )
-                self.grid[coord] = self.current_room
+            room_data = generate_room(self.floor, context)
+            self.current_room = Room(**room_data)
+            self.grid[coord] = self.current_room
 
         self.display_room()
 

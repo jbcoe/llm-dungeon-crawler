@@ -1,8 +1,7 @@
-import json
 import random
 from ollama import chat
 from .logger import log_event
-from .models import Room
+from .mechanics import generate_mechanics
 
 
 def _get_random_suggestions(filename: str, count: int = 3) -> str:
@@ -18,103 +17,95 @@ def _get_random_suggestions(filename: str, count: int = 3) -> str:
 
 
 def generate_room(floor: int, previous_context: str = "") -> dict:
-    room_ideas = _get_random_suggestions("data/rooms.md", 3)
-    enemy_ideas = _get_random_suggestions("data/enemies.md", 3)
-    npc_ideas = _get_random_suggestions("data/npcs.md", 3)
-    item_ideas = _get_random_suggestions("data/items.md", 3)
+    mechanics = generate_mechanics(floor)
+
+    # Format lists for the prompt
+    room_type_name = mechanics["room_type"]["name"]
+    room_type_desc = mechanics["room_type"]["description"]
+    exits_str = ", ".join(mechanics["exits"])
+    enemies_str = (
+        ", ".join([e["name"] for e in mechanics["enemies"]])
+        if mechanics["enemies"]
+        else "None"
+    )
+    npcs_str = (
+        ", ".join([n["name"] for n in mechanics["npcs"]])
+        if mechanics["npcs"]
+        else "None"
+    )
+    items_str = (
+        ", ".join([i["name"] for i in mechanics["items"]])
+        if mechanics["items"]
+        else "None"
+    )
 
     prompt = f"""
-    Act as a Dungeon Master. Generate a new room for floor {floor}.
-    Previous context: {previous_context}
+    Act as a master of Dark Fantasy storytelling. You are describing a single room in a dungeon.
 
-    Design this room inspired by canonical fantasy literature and films.
-    CRITICAL: Create variety! Not every room should have a fight. Many rooms should be empty but highly atmospheric. Include intricate puzzles, environmental storytelling, or mysterious NPCs (who might offer riddles, lore, or trades). When enemies do appear, mix them up (e.g., mythical beasts, ancient undead, cunning cultists, magical constructs) rather than just generic monsters.
+    The player has just entered this room. The journey so far: {previous_context}
 
-    Here are some inspirations you can use or adapt (you don't have to use them all, or exactly as written):
-    Room Concepts:
-    {room_ideas}
+    Room Elements (DO NOT invent extra enemies, items, or NPCs not listed here):
+    - Room Type: {room_type_name} ({room_type_desc})
+    - Exits: {exits_str}
+    - Enemies present: {enemies_str}
+    - NPCs present: {npcs_str}
+    - Items found here: {items_str}
 
-    Enemies:
-    {enemy_ideas}
-
-    NPCs:
-    {npc_ideas}
-
-    Items:
-    {item_ideas}
-
-    Return ONLY a valid JSON object with:
-    - description (string): Atmospheric description of the room, puzzles, or environmental challenges.
-    - exits (list of strings): Available directions (e.g. north, south, east, west).
-    - items (list of objects): Zero or more items with 'name', 'description', 'stat_effect' (int), and 'effect_type' ('healing', 'damage', 'weapon', or 'none'). Many items should just be 'none' for puzzles or lore. 'weapon' items increase player attack power by their 'stat_effect'.
-    - enemies (list of objects): Zero or more enemies with 'name', 'description', 'hp' (int), 'max_hp' (int), 'attack' (int). Often leave this empty to build tension!
-    - npcs (list of objects): Zero or more friendly/neutral NPCs with 'name', 'description', and 'dialogue_context' (string, brief instructions on how they speak and what they know, e.g., "A sphinx who speaks in riddles").
+    Write a rich, 3-4 sentence atmospheric description of the room itself.
+    Focus on lighting, sound, smell, and the mood, reflecting the Room Type description.
+    Incorporate the presence of any enemies, NPCs, or items seamlessly into the environment description.
+    Return ONLY the descriptive text. Do not use JSON or code blocks.
     """
-    log_event("API_CALL: generate_room", prompt)
-    try:
-        response = chat(
-            model="gemma-4:e4b",
-            messages=[{"role": "user", "content": prompt}],
-            format=Room.model_json_schema(),
-            options={"temperature": 0},
-        )
-        response_text = response.message.content or "{}"
-        log_event("API_RESPONSE: generate_room", response_text)
-        return json.loads(response_text)
-    except Exception as e:
-        log_event("API_ERROR: generate_room", str(e))
-        return _fallback_room()
+
+    log_event("API_CALL: generate_room_description", prompt)
+    response = chat(
+        model="gemma4:e4b",
+        messages=[{"role": "user", "content": prompt}],
+        options={"temperature": 0.7},
+    )
+    description = response.message.content.strip()
+    log_event("API_RESPONSE: generate_room_description", description)
+    mechanics["description"] = description
+
+    return mechanics
 
 
 def narrate_item_use(item_name: str, item_description: str, room_context: str) -> str:
     prompt = f"""
-    Act as a Dungeon Master. The player tries to use an item in their current location.
+    Act as a poetic Dungeon Master. A player interacts with an object in their environment.
     Item: {item_name}
     Description: {item_description}
-    Current Room Context: {room_context}
+    Current Room: {room_context}
 
-    Narrate what happens when they use, inspect, or interact with it. Keep it to 1-2 evocative sentences. It might reveal lore, have a mysterious but harmless effect, or simply do nothing right now.
+    Narrate the interaction with evocative, "Show, Don't Tell" prose. Focus on the physical sensation or the sudden shift in the room's energy. Keep it to 1-2 powerful sentences.
+    Return ONLY the narrative text. Do not provide options, choices, or commentary.
     """
     log_event("API_CALL: narrate_item_use", prompt)
-    try:
-        response = chat(
-            model="gemma-4:e4b", messages=[{"role": "user", "content": prompt}]
-        )
-        response_text = (
-            response.message.content.strip()
-            if response.message.content
-            else f"You examine the {item_name}. It seems to do nothing."
-        )
-        log_event("API_RESPONSE: narrate_item_use", response_text)
-        return response_text
-    except Exception as e:
-        log_event("API_ERROR: narrate_item_use", str(e))
-        return f"You examine the {item_name}. It seems to do nothing."
+    response = chat(model="gemma4:e4b", messages=[{"role": "user", "content": prompt}])
+    response_text = response.message.content.strip()
+    log_event("API_RESPONSE: narrate_item_use", response_text)
+    return response_text
 
 
 def generate_npc_response(
     npc_name: str, npc_context: str, player_message: str, history: str = ""
 ) -> str:
     prompt = f"""
-    Act as an NPC named {npc_name} in a dungeon crawler.
-    Context/Personality: {npc_context}
-    Recent conversation history: {history}
-    The player says: "{player_message}"
-    Respond in character. Keep it brief, 1-3 sentences.
+    Act as {npc_name}, a resident of this dark dungeon.
+    Your identity: {npc_context}
+    The conversation so far: {history}
+
+    The traveler says: "{player_message}"
+
+    Respond in your unique voice. Avoid being overly helpful unless it fits your character.
+    Keep it brief (1-3 sentences), but let your personality bleed through the words.
+    Return ONLY the dialogue and actions. Do not provide options, choices, or commentary.
     """
     log_event("API_CALL: generate_npc_response", prompt)
-    try:
-        response = chat(
-            model="gemma-4:e4b", messages=[{"role": "user", "content": prompt}]
-        )
-        response_text = (
-            response.message.content.strip() if response.message.content else "..."
-        )
-        log_event("API_RESPONSE: generate_npc_response", response_text)
-        return response_text
-    except Exception as e:
-        log_event("API_ERROR: generate_npc_response", str(e))
-        return "The NPC just stares at you blankly."
+    response = chat(model="gemma4:e4b", messages=[{"role": "user", "content": prompt}])
+    response_text = response.message.content.strip()
+    log_event("API_RESPONSE: generate_npc_response", response_text)
+    return response_text
 
 
 def narrate_combat(
@@ -125,65 +116,35 @@ def narrate_combat(
     damage_dealt: int,
 ) -> str:
     prompt = f"""
-    Act as a Dungeon Master narrating a single turn of combat.
-    The player chose to: {player_action}.
-    The enemy is {enemy_name}.
-    Damage dealt: {damage_dealt}.
-    Current Player HP: {player_hp}. Current Enemy HP: {enemy_hp}.
-    Provide a brief, exciting 1-2 sentence description of what just happened.
+    Act as a gritty combat narrator.
+    The player {player_action} against the {enemy_name}.
+    Impact: {damage_dealt} damage dealt.
+    Enemy Status: {enemy_hp} HP remaining.
+    Player Status: {player_hp} HP remaining.
+
+    Describe the violence of the exchange in 1-2 visceral sentences. Incorporate sensory details like the sound of weapons, the spray of blood, or the heavy breathing of the combatants.
+    Return ONLY the narrative text. Do not provide options, choices, or commentary.
     """
     log_event("API_CALL: narrate_combat", prompt)
-    try:
-        response = chat(
-            model="gemma-4:e4b", messages=[{"role": "user", "content": prompt}]
-        )
-        response_text = (
-            response.message.content.strip()
-            if response.message.content
-            else f"You {player_action} the {enemy_name} for {damage_dealt} damage."
-        )
-        log_event("API_RESPONSE: narrate_combat", response_text)
-        return response_text
-    except Exception as e:
-        log_event("API_ERROR: narrate_combat", str(e))
-        return f"You {player_action} the {enemy_name} for {damage_dealt} damage."
+    response = chat(model="gemma4:e4b", messages=[{"role": "user", "content": prompt}])
+    response_text = response.message.content.strip()
+    log_event("API_RESPONSE: narrate_combat", response_text)
+    return response_text
 
 
 def generate_intro() -> str:
     prompt = """
-    Act as a Dungeon Master. Generate an atmospheric introduction (3-4 sentences) setting the scene for a new adventurer entering an endless, procedurally generated dungeon inspired by classic fantasy.
-    Crucially, explicitly describe the player character's appearance, class, or demeanor to give them a distinct identity, and give them a vague but compelling reason to be there (e.g., seeking a lost arcane artifact, fulfilling a grim oath, or hunting a rumor of endless wealth).
+    Act as a Dungeon Master. Write a haunting introduction for a new journey.
+
+    1. Describe the player character's striking physical feature or equipment that hints at their class.
+    2. Describe the oppressive entrance to the dungeon.
+    3. Provide one cryptic reason for their arrival (an old map, a family curse, a whispered rumor).
+
+    Use 3-4 sentences of high-quality dark fantasy prose.
+    Return ONLY the narrative text. Do not provide options, choices, or commentary.
     """
     log_event("API_CALL: generate_intro", prompt)
-    try:
-        response = chat(
-            model="gemma-4:e4b", messages=[{"role": "user", "content": prompt}]
-        )
-        response_text = (
-            response.message.content.strip()
-            if response.message.content
-            else "You stand before the entrance of a dark, forgotten dungeon. What secrets lie within?"
-        )
-        log_event("API_RESPONSE: generate_intro", response_text)
-        return response_text
-    except Exception as e:
-        log_event("API_ERROR: generate_intro", str(e))
-        return "You stand before the entrance of a dark, forgotten dungeon. What secrets lie within?"
-
-
-def _fallback_room() -> dict:
-    return {
-        "description": "A dark, generic room. You sense an error in the matrix.",
-        "exits": ["north", "south"],
-        "items": [],
-        "enemies": [
-            {
-                "name": "Glitch Slime",
-                "description": "A trembling blob of bad code.",
-                "hp": 10,
-                "max_hp": 10,
-                "attack": 2,
-            }
-        ],
-        "npcs": [],
-    }
+    response = chat(model="gemma4:e4b", messages=[{"role": "user", "content": prompt}])
+    response_text = response.message.content.strip()
+    log_event("API_RESPONSE: generate_intro", response_text)
+    return response_text

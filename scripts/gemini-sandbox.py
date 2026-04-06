@@ -55,7 +55,11 @@ def main():
     log(f"Note: Your current directory {project_root} is mounted to /workspace")
 
     if args.update_gemini:
-        container_cmd = "npm install -g @google/gemini-cli@latest --silent && gemini"
+        container_cmd = (
+            "export NPM_CONFIG_PREFIX=~/.npm-global && "
+            "export PATH=~/.npm-global/bin:$PATH && "
+            "npm install -g @google/gemini-cli@latest && gemini"
+        )
     else:
         container_cmd = "gemini"
 
@@ -64,10 +68,14 @@ def main():
         "run",
         "-it",
         "--rm",
+        "--network",
+        "host",
         "-v",
         f"{project_root}:/workspace",
         "-e",
-        f"GEMINI_API_KEY={os.environ['GEMINI_API_KEY']}",
+        f"GEMINI_API_KEY={os.environ.get('GEMINI_API_KEY', '')}",
+        "-e",
+        f"OLLAMA_HOST={os.environ.get('OLLAMA_HOST', 'http://127.0.0.1:11434')}",
     ]
 
     if "TERM" in os.environ:

@@ -10,7 +10,7 @@ def test_engine_initialization(mock_ai_api):
     assert engine.player.hp == 100
     assert engine.floor == 1
     assert engine.current_room is not None
-    assert engine.current_room.description == "A mocked room for testing."
+    assert engine.current_room.description == "A mocked room."
     assert "north" in engine.current_room.exits
     mock_gen_room.assert_called_once()
 

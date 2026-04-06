@@ -37,18 +37,20 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Gemini CLI globally
-RUN npm install -g @google/gemini-cli
-
 # Switch to non-root user
 USER vscode
 WORKDIR /workspace
 
+# Configure npm for user-local global installs
+ENV NPM_CONFIG_PREFIX=/home/vscode/.npm-global
+ENV PATH="/home/vscode/.npm-global/bin:/home/vscode/.local/bin:/usr/local/bin:${PATH}"
+RUN mkdir -p /home/vscode/.npm-global
+
+# Install Gemini CLI as the user
+RUN npm install -g @google/gemini-cli
+
 # Set up uv and Python environment
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Set up environment variables
-ENV PATH="/home/vscode/.local/bin:/usr/local/bin:${PATH}"
 ENV UV_PROJECT_ENVIRONMENT="/home/vscode/.venv"
 
 # Pre-configure Gemini CLI
