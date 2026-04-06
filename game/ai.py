@@ -1,6 +1,6 @@
 from ollama import chat
-from .logger import log_event
-from .mechanics import generate_mechanics
+from game.logger import log_event
+from game.mechanics import generate_mechanics
 
 
 def generate_room(floor: int, previous_context: str = "") -> dict:

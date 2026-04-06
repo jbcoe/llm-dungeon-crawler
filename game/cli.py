@@ -1,7 +1,7 @@
 import sys
 import ollama
 from rich.console import Console
-from .engine import GameEngine
+from game.engine import GameEngine
 
 console = Console()
 

@@ -1,12 +1,12 @@
-from .models import Player, Room
-from .ai import (
+from game.models import Player, Room
+from game.ai import (
     generate_room,
     narrate_combat,
     generate_npc_response,
     generate_intro,
     narrate_item_use,
 )
-from .logger import setup_logger, log_event
+from game.logger import setup_logger, log_event
 from rich.console import Console
 
 console = Console()
