@@ -1,6 +1,7 @@
 """AI-powered narration and response generation."""
 
 import importlib.resources
+import logging
 from functools import lru_cache
 from typing import Any
 
@@ -8,6 +9,8 @@ from ollama import chat
 
 from game.logger import log_event
 from game.mechanics import generate_mechanics
+
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=None)
@@ -17,6 +20,32 @@ def load_prompt(filename: str) -> str:
     if not filepath.is_file():
         raise FileNotFoundError(f"Missing expected prompt file: {filename}")
     return filepath.read_text(encoding="utf-8")
+
+
+def _safe_ai_call(model: str, prompt: str, system_message: str | None = None) -> str:
+    """Make a robust call to the AI model with basic error handling."""
+    messages = []
+    if system_message:
+        messages.append({"role": "system", "content": system_message})
+    messages.append({"role": "user", "content": prompt})
+
+    try:
+        log_event(f"API_CALL: {model}", prompt)
+        response = chat(
+            model=model,
+            messages=messages,
+            options={"temperature": 0.7},
+        )
+        if not response.message or not response.message.content:
+            logger.warning("AI returned an empty response.")
+            return "The air grows cold and silent..."
+
+        content = response.message.content.strip()
+        log_event(f"API_RESPONSE: {model}", content)
+        return content
+    except Exception as e:
+        logger.error(f"AI call failed: {str(e)}")
+        return "You feel a strange disturbance in the void..."
 
 
 def generate_room(floor: int, previous_context: str = "") -> dict[str, Any]:
@@ -54,18 +83,7 @@ def generate_room(floor: int, previous_context: str = "") -> dict[str, Any]:
         items_str=items_str,
     )
 
-    log_event("API_CALL: generate_room_description", prompt)
-    response = chat(
-        model="gemma4:e4b",
-        messages=[{"role": "user", "content": prompt}],
-        options={"temperature": 0.7},
-    )
-    description = (
-        response.message.content.strip()
-        if response.message and response.message.content
-        else ""
-    )
-    log_event("API_RESPONSE: generate_room_description", description)
+    description = _safe_ai_call("gemma4:e4b", prompt)
     mechanics["description"] = description
 
     return mechanics
@@ -79,15 +97,7 @@ def narrate_item_use(item_name: str, item_description: str, room_context: str) -
         item_description=item_description,
         room_context=room_context,
     )
-    log_event("API_CALL: narrate_item_use", prompt)
-    response = chat(model="gemma4:e4b", messages=[{"role": "user", "content": prompt}])
-    response_text = (
-        response.message.content.strip()
-        if response.message and response.message.content
-        else ""
-    )
-    log_event("API_RESPONSE: narrate_item_use", response_text)
-    return response_text
+    return _safe_ai_call("gemma4:e4b", prompt)
 
 
 def generate_npc_response(
@@ -101,15 +111,7 @@ def generate_npc_response(
         history=history,
         player_message=player_message,
     )
-    log_event("API_CALL: generate_npc_response", prompt)
-    response = chat(model="gemma4:e4b", messages=[{"role": "user", "content": prompt}])
-    response_text = (
-        response.message.content.strip()
-        if response.message and response.message.content
-        else ""
-    )
-    log_event("API_RESPONSE: generate_npc_response", response_text)
-    return response_text
+    return _safe_ai_call("gemma4:e4b", prompt)
 
 
 def narrate_combat(
@@ -128,26 +130,10 @@ def narrate_combat(
         enemy_hp=enemy_hp,
         player_hp=player_hp,
     )
-    log_event("API_CALL: narrate_combat", prompt)
-    response = chat(model="gemma4:e4b", messages=[{"role": "user", "content": prompt}])
-    response_text = (
-        response.message.content.strip()
-        if response.message and response.message.content
-        else ""
-    )
-    log_event("API_RESPONSE: narrate_combat", response_text)
-    return response_text
+    return _safe_ai_call("gemma4:e4b", prompt)
 
 
 def generate_intro() -> str:
     """Generate a haunting introduction for the game session."""
     prompt = load_prompt("intro.md")
-    log_event("API_CALL: generate_intro", prompt)
-    response = chat(model="gemma4:e4b", messages=[{"role": "user", "content": prompt}])
-    response_text = (
-        response.message.content.strip()
-        if response.message and response.message.content
-        else ""
-    )
-    log_event("API_RESPONSE: generate_intro", response_text)
-    return response_text
+    return _safe_ai_call("gemma4:e4b", prompt)

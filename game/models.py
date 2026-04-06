@@ -1,6 +1,6 @@
 """Data models for game entities using Pydantic."""
 
-from pydantic import BaseModel, ValidationInfo, field_validator
+from pydantic import BaseModel, Field
 
 
 class Item(BaseModel):
@@ -8,16 +8,8 @@ class Item(BaseModel):
 
     name: str
     description: str
-    stat_effect: int | None = 0
-    effect_type: str | None = "none"  # healing, damage, none
-
-    @field_validator("stat_effect", "effect_type", mode="before")
-    @classmethod
-    def set_defaults(cls, v: int | str | None, info: ValidationInfo) -> int | str:
-        """Set default values for optional fields."""
-        if v is None:
-            return 0 if info.field_name == "stat_effect" else "none"
-        return v
+    stat_effect: int = Field(default=0)
+    effect_type: str = Field(default="none")  # healing, damage, none, weapon
 
 
 class Enemy(BaseModel):
@@ -25,17 +17,9 @@ class Enemy(BaseModel):
 
     name: str
     description: str
-    hp: int | None = 10
-    max_hp: int | None = 10
-    attack: int | None = 5
-
-    @field_validator("hp", "max_hp", "attack", mode="before")
-    @classmethod
-    def set_enemy_defaults(cls, v: int | None, info: ValidationInfo) -> int:
-        """Set default values for enemy stats."""
-        if v is None:
-            return 5 if info.field_name == "attack" else 10
-        return v
+    hp: int = Field(default=10)
+    max_hp: int = Field(default=10)
+    attack: int = Field(default=5)
 
 
 class NPC(BaseModel):
@@ -43,36 +27,32 @@ class NPC(BaseModel):
 
     name: str
     description: str
-    dialogue_context: str | None = ""
+    dialogue_context: str = Field(default="")
 
 
 class Room(BaseModel):
     """Represents a room in the dungeon."""
 
     description: str
-    exits: list[str]
-    items: list[Item] = []
-    enemies: list[Enemy] = []
-    npcs: list[NPC] = []
+    exits: list[str] = Field(default_factory=list)
+    items: list[Item] = Field(default_factory=list)
+    enemies: list[Enemy] = Field(default_factory=list)
+    npcs: list[NPC] = Field(default_factory=list)
 
 
 class Player(BaseModel):
     """Represents the player character and their state."""
 
-    hp: int = 100
-    max_hp: int = 100
-    attack: int = 10
-    inventory: list[Item] = []
-    equipped_weapon: Item | None = None
+    hp: int = Field(default=100)
+    max_hp: int = Field(default=100)
+    attack: int = Field(default=10)
+    inventory: list[Item] = Field(default_factory=list)
+    equipped_weapon: Item | None = Field(default=None)
 
     @property
     def total_attack(self) -> int:
         """Calculate total attack including weapon bonuses."""
-        bonus = (
-            self.equipped_weapon.stat_effect
-            if self.equipped_weapon and self.equipped_weapon.stat_effect
-            else 0
-        )
+        bonus = self.equipped_weapon.stat_effect if self.equipped_weapon else 0
         return self.attack + bonus
 
     def take_damage(self, amount: int) -> None:

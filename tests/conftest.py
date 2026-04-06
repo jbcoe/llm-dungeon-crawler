@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_ai_api() -> Generator[tuple[Any, ...], None, None]:
     """Mock the AI API calls and console output globally for all tests."""
     with (
@@ -15,7 +15,7 @@ def mock_ai_api() -> Generator[tuple[Any, ...], None, None]:
         patch("game.engine.generate_npc_response") as mock_npc_resp,
         patch("game.engine.generate_intro") as mock_intro,
         patch("game.engine.narrate_item_use") as mock_item_use,
-        patch("game.engine.console.print") as mock_print,
+        patch("game.engine.GameUI.print") as mock_print,
     ):
         mock_room_data: dict[str, Any] = {
             "description": "A mocked room.",

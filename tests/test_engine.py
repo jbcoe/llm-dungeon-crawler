@@ -68,8 +68,9 @@ def test_talk(mock_ai_api: Any) -> None:
     mock_npc_resp.assert_called_once()
 
 
-def test_autocompletion_options() -> None:
+def test_autocompletion_options(mock_ai_api: Any) -> None:
     """Test that autocompletion returns expected command and entity words."""
+    _ = mock_ai_api
     engine = GameEngine(mock_input=["quit"])
     room = Room(
         description="Test Room",
@@ -113,8 +114,9 @@ def test_autocompletion_options() -> None:
     assert "sword" in options
 
 
-def test_history_tracking() -> None:
+def test_history_tracking(mock_ai_api: Any) -> None:
     """Test that player commands are correctly tracked in history."""
+    _ = mock_ai_api
     engine = GameEngine(mock_input=["look", "go north", "inventory", "quit"])
     engine.current_room = Room(description="Test", exits=["north"])
     # Mock enter_new_room so it doesn't try to generate a real room when moving
@@ -124,8 +126,9 @@ def test_history_tracking() -> None:
     assert engine.history == ["look", "go north", "inventory", "quit"]
 
 
-def test_history_truncation() -> None:
+def test_history_truncation(mock_ai_api: Any) -> None:
     """Test that command history is truncated according to max_history."""
+    _ = mock_ai_api
     engine = GameEngine(mock_input=["look", "look", "look", "quit"], max_history=2)
     engine.current_room = Room(description="Test", exits=["north"])
     engine.game_loop()
