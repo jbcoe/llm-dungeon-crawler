@@ -1,4 +1,5 @@
 # NPC Types
+
 - Wandering Merchant: A pragmatic traveler with a heavy pack, willing to trade mundane goods for exotic dungeon finds.
 - Lost Knight: A heavily armored paladin who has lost their party and their way, seeking redemption or an exit.
 - Ghostly Scholar: The spirit of an ancient historian, bound to the dungeon. They offer lore and history in exchange for hearing news of the outside world.

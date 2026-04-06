@@ -1,4 +1,5 @@
 # Item Types
+
 - Healing Salve: A small tin containing a pungent, green paste that closes minor wounds.
 - Rusty Broadsword: A heavy blade, dulled by time and neglect, but still capable of crushing armor.
 - Glowing Orb: A fist-sized crystal that emits a soft, continuous blue light.
