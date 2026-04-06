@@ -1,41 +1,26 @@
 """Shared test fixtures for the game."""
 
-from typing import Any, Generator
-from unittest.mock import patch
-
 import pytest
+
+from game.ai import AIGenerator
+from game.logger import log_event
+
+
+class FakeAIGenerator(AIGenerator):
+    """Test double for AIGenerator to bypass network calls."""
+
+    def __init__(self) -> None:
+        """Initialize the fake AI generator."""
+        super().__init__(model="test-model")
+
+    def _query_model(self, prompt: str, system_message: str | None = None) -> str:
+        log_event(f"API_CALL: {self.model}", prompt)
+        content = "Simulated AI response."
+        log_event(f"API_RESPONSE: {self.model}", content)
+        return content
 
 
 @pytest.fixture
-def mock_ai_api() -> Generator[tuple[Any, ...], None, None]:
-    """Mock the AI API calls and console output for tests."""
-    with (
-        patch("game.ai.AIGenerator.generate_room") as mock_gen_room,
-        patch("game.ai.AIGenerator.narrate_combat") as mock_narrate,
-        patch("game.ai.AIGenerator.generate_npc_response") as mock_npc_resp,
-        patch("game.ai.AIGenerator.generate_intro") as mock_intro,
-        patch("game.ai.AIGenerator.narrate_item_use") as mock_item_use,
-        patch("game.engine.GameUI.print") as mock_print,
-    ):
-        mock_room_data: dict[str, Any] = {
-            "description": "A mocked room.",
-            "room_type": {"name": "Mock Room", "description": "A mocked room."},
-            "exits": ["north", "south"],
-            "items": list[dict[str, Any]](),
-            "enemies": list[dict[str, Any]](),
-            "npcs": list[dict[str, Any]](),
-        }
-        mock_gen_room.return_value = mock_room_data
-        mock_narrate.return_value = "Mocked combat narration."
-        mock_npc_resp.return_value = "Mocked NPC response."
-        mock_intro.return_value = "Mocked intro text."
-        mock_item_use.return_value = "Mocked item usage narration."
-
-        yield (
-            mock_gen_room,
-            mock_narrate,
-            mock_npc_resp,
-            mock_intro,
-            mock_item_use,
-            mock_print,
-        )
+def fake_ai() -> FakeAIGenerator:
+    """Return an instance of FakeAIGenerator."""
+    return FakeAIGenerator()
