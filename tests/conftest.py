@@ -1,8 +1,9 @@
 """Shared test fixtures for the game."""
 
-from typing import Generator, Any
-import pytest
+from typing import Any, Generator
 from unittest.mock import patch
+
+import pytest
 
 
 @pytest.fixture(autouse=True)
