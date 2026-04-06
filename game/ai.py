@@ -1,6 +1,7 @@
 """AI-powered narration and response generation."""
 
 import importlib.resources
+from functools import lru_cache
 from typing import Any
 
 from ollama import chat
@@ -9,6 +10,7 @@ from game.logger import log_event
 from game.mechanics import generate_mechanics
 
 
+@lru_cache(maxsize=None)
 def load_prompt(filename: str) -> str:
     """Load a prompt template from a markdown file in the data directory."""
     filepath = importlib.resources.files("game.data.prompts").joinpath(filename)

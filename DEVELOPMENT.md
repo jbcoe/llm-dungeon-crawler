@@ -7,7 +7,7 @@ This document outlines how to develop and contribute to `llm-dungeon-crawler`.
 This project uses two different AI systems for distinct purposes:
 
 1. **Ollama (Local)**: Powers the game's actual runtime (NPC dialogue, room descriptions).
-1. **Gemini (Cloud)**: Powers the **Agentic Development Workflow** via the Gemini CLI to help write code, fix bugs, and refactor.
+2. **Gemini (Cloud)**: Powers the **Agentic Development Workflow** via the Gemini CLI to help write code, fix bugs, and refactor.
 
 ## Agentic Development Workflow
 
@@ -19,7 +19,7 @@ To work on this codebase using AI assistance, you should use the provided Docker
    export GEMINI_API_KEY="your_api_key_here"
    ```
 
-1. **Launch the Sandbox**:
+2. **Launch the Sandbox**:
 
    ```bash
    ./scripts/gemini-sandbox.sh
@@ -27,7 +27,7 @@ To work on this codebase using AI assistance, you should use the provided Docker
 
    *This script mounts your local workspace, passes your Gemini API key, and sets up host networking so the game can still reach your local Ollama instance.*
 
-1. **Start the Agent**:
+3. **Start the Agent**:
    Once inside the container, simply run:
 
    ```bash
@@ -45,11 +45,12 @@ All content is stored in the `game/data/` directory as standard Markdown (`.md`)
 1. **Entities and Environments:**
    Lists of available enemies, items, NPCs, and rooms are defined in their respective markdown files (e.g., `enemies.md`, `rooms.md`). To add new content, add a new line following the established `- Name: Description` format. The game engine automatically loads these at runtime.
 
-1. **AI Prompts:**
+2. **AI Prompts:**
    All instructions sent to the Ollama LLM are stored as prompt templates (e.g., `prompts/room.md`, `prompts/combat.md`). These files control the tone, style, and rules the AI follows when generating narrative text.
 
    - If you want the game to feel like a sci-fi adventure rather than dark fantasy, you can simply edit the prompt text in these files.
    - The engine uses variables wrapped in curly braces (e.g., `{enemy_name}`). When modifying the prompt text, ensure these variables are kept intact so the engine can inject the correct context into the prompts.
+   - **Important:** Because these templates use Python's `.format()` method, if you need to use literal curly braces in your prompt (e.g., for JSON-like structures), you must escape them by doubling them up like `{{` and `}}`.
 
 ## Working with the Code
 

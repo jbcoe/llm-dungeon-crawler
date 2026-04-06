@@ -9,8 +9,8 @@ The game uses **Ollama** and the **Gemma 4** model locally to generate rich, "Da
 Before you can play, you need the following installed on your host machine:
 
 1. **Python 3.12+**
-1. **uv** (Python package installer and resolver)
-1. **Ollama** (for running the local LLM)
+2. **uv** (Python package installer and resolver)
+3. **Ollama** (for running the local LLM)
 
 ## Setup & Running the Game
 
@@ -21,14 +21,14 @@ Before you can play, you need the following installed on your host machine:
    ollama serve
    ```
 
-1. **Pull the Model**
+2. **Pull the Model**
    Pull the required Gemma 4 model (the game expects `gemma4:e4b`):
 
    ```bash
    ollama pull gemma4:e4b
    ```
 
-1. **Play!**
+3. **Play!**
    Launch the game directly on your host machine:
 
    ```bash
