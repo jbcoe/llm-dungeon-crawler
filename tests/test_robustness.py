@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from game.ai import _safe_ai_call
+from game.ai import AIGenerator
 from game.engine import GameEngine, GameUI
-from game.mechanics import _get_item_mechanics, load_data
+from game.mechanics import generate_mechanics, load_data
 
 
 def test_robust_markdown_parsing() -> None:
@@ -33,47 +33,65 @@ Invalid line
 
 
 def test_item_mechanics_balancing() -> None:
-    """Test that item mechanics are correctly balanced and typed."""
-    healing_item = {"name": "Large Health Potion", "description": "Heals you."}
-    weapon_item = {"name": "Iron Sword", "description": "A sharp blade."}
-    junk_item = {"name": "Old Boot", "description": "Smelly."}
+    """Test that item mechanics are correctly balanced through generate_mechanics."""
+    with (
+        patch("game.mechanics.ENEMIES", []),
+        patch("game.mechanics.NPCS", []),
+        patch("game.mechanics.ROOMS", [{"name": "Cave", "description": "Dark"}]),
+    ):
+        # Healing item
+        healing_item = [{"name": "Health Potion", "description": "Heals you."}]
+        with patch("game.mechanics.ITEMS", healing_item):
+            with patch("random.random", return_value=0.1):  # force item spawn
+                mechanics = generate_mechanics(floor=1)
+                assert len(mechanics["items"]) == 1
+                assert mechanics["items"][0]["effect_type"] == "healing"
+                assert mechanics["items"][0]["stat_effect"] >= 20
 
-    h_mech = _get_item_mechanics(healing_item, floor=1)
-    assert h_mech["effect_type"] == "healing"
-    assert h_mech["stat_effect"] >= 20
+        # Weapon item
+        weapon_item = [{"name": "Iron Sword", "description": "A sharp blade."}]
+        with patch("game.mechanics.ITEMS", weapon_item):
+            with patch("random.random", return_value=0.1):
+                mechanics = generate_mechanics(floor=1)
+                assert len(mechanics["items"]) == 1
+                assert mechanics["items"][0]["effect_type"] == "weapon"
+                assert mechanics["items"][0]["stat_effect"] == 7
 
-    w_mech = _get_item_mechanics(weapon_item, floor=1)
-    assert w_mech["effect_type"] == "weapon"
-    assert w_mech["stat_effect"] == 7
-
-    j_mech = _get_item_mechanics(junk_item, floor=1)
-    assert j_mech["effect_type"] == "none"
-    assert j_mech["stat_effect"] == 0
+        # Junk item
+        junk_item = [{"name": "Old Boot", "description": "Smelly."}]
+        with patch("game.mechanics.ITEMS", junk_item):
+            with patch("random.random", return_value=0.1):
+                mechanics = generate_mechanics(floor=1)
+                assert len(mechanics["items"]) == 1
+                assert mechanics["items"][0]["effect_type"] == "none"
+                assert mechanics["items"][0]["stat_effect"] == 0
 
 
 @patch("game.ai.chat")
-def test_safe_ai_call_error_handling(mock_chat: MagicMock) -> None:
-    """Test that _safe_ai_call does not silently hide errors."""
+def test_query_model_error_handling(mock_chat: MagicMock) -> None:
+    """Test that _query_model does not silently hide errors."""
     mock_chat.side_effect = Exception("AI Service Down")
 
     with pytest.raises(Exception, match="AI Service Down"):
-        _safe_ai_call("model", "prompt")
+        AIGenerator()._query_model("prompt")
 
 
 @patch("game.ai.chat")
-def test_safe_ai_call_empty_response(mock_chat: MagicMock) -> None:
-    """Test that _safe_ai_call raises an error on empty responses."""
+def test_query_model_empty_response(mock_chat: MagicMock) -> None:
+    """Test that _query_model raises an error on empty responses."""
     mock_response = MagicMock()
     mock_response.message.content = ""
     mock_chat.return_value = mock_response
 
     with pytest.raises(ValueError, match="AI returned an empty response."):
-        _safe_ai_call("model", "prompt")
+        AIGenerator()._query_model("prompt")
 
 
 def test_engine_fallback_on_bad_room_generation() -> None:
     """Test that the engine recovers if room generation fails."""
-    with patch("game.engine.generate_room", side_effect=Exception("API failure")):
+    with patch(
+        "game.ai.AIGenerator.generate_room", side_effect=Exception("API failure")
+    ):
         engine = GameEngine(mock_input=["quit"])
         # Call enter_new_room to trigger room generation and the fallback logic
         engine.enter_new_room("start")

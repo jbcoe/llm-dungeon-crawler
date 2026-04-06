@@ -10,11 +10,11 @@ import pytest
 def mock_ai_api() -> Generator[tuple[Any, ...], None, None]:
     """Mock the AI API calls and console output for tests."""
     with (
-        patch("game.engine.generate_room") as mock_gen_room,
-        patch("game.engine.narrate_combat") as mock_narrate,
-        patch("game.engine.generate_npc_response") as mock_npc_resp,
-        patch("game.engine.generate_intro") as mock_intro,
-        patch("game.engine.narrate_item_use") as mock_item_use,
+        patch("game.ai.AIGenerator.generate_room") as mock_gen_room,
+        patch("game.ai.AIGenerator.narrate_combat") as mock_narrate,
+        patch("game.ai.AIGenerator.generate_npc_response") as mock_npc_resp,
+        patch("game.ai.AIGenerator.generate_intro") as mock_intro,
+        patch("game.ai.AIGenerator.narrate_item_use") as mock_item_use,
         patch("game.engine.GameUI.print") as mock_print,
     ):
         mock_room_data: dict[str, Any] = {

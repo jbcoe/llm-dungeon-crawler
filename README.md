@@ -2,7 +2,7 @@
 
 A text-based RPG dungeon crawler where the game engine handles the mechanics (stats, items, combat) and an LLM provides atmospheric descriptions and NPC dialogue.
 
-The game uses **Ollama** and the **Gemma 4** model locally to generate rich, "Dark Fantasy" storytelling as you explore a procedurally generated dungeon.
+The game uses **Ollama** and the **Gemma 4** model (by default) locally to generate rich, "Dark Fantasy" storytelling as you explore a procedurally generated dungeon. You can also specify other local models using the `--model` flag.
 
 ## Requirements
 
@@ -22,17 +22,24 @@ Before you can play, you need the following installed on your host machine:
    ```
 
 2. **Pull the Model**
-   Pull the required Gemma 4 model (the game expects `gemma4:e4b`):
+   Pull the default Gemma 4 model (or any other compatible model you wish to use):
 
    ```bash
    ollama pull gemma4:e4b
    ```
 
 3. **Play!**
-   Launch the game directly on your host machine:
+   Launch the game directly on your host machine using the default model:
 
    ```bash
-   uv run main.py
+   uv run dungeon-crawler
+   ```
+
+   **Using a Custom Model:**
+   You can specify a different model using the `--model` flag (ensure you have pulled it via `ollama pull <model_name>` first):
+
+   ```bash
+   uv run dungeon-crawler --model llama3
    ```
 
 ## Gameplay Controls

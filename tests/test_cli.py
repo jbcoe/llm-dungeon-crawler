@@ -70,6 +70,6 @@ def test_main(mock_engine_cls: MagicMock, mock_check_conn: MagicMock) -> None:
 
     main()
 
-    mock_check_conn.assert_called_once()
-    mock_engine_cls.assert_called_once_with(max_history=50)
+    mock_check_conn.assert_called_once_with("gemma4:e4b")
+    mock_engine_cls.assert_called_once_with(max_history=50, model="gemma4:e4b")
     mock_engine.start.assert_called_once()

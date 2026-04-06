@@ -58,7 +58,7 @@ def test_display_status(engine: GameEngine) -> None:
 def test_handle_go(engine: GameEngine) -> None:
     """Ensure the 'go' command validates exits and handles enemy blockage correctly."""
     with (
-        patch("game.engine.generate_room") as mock_gen_room,
+        patch("game.ai.AIGenerator.generate_room") as mock_gen_room,
         patch("game.engine.GameUI.print") as mock_print,
     ):
         mock_gen_room.return_value = {
@@ -96,7 +96,7 @@ def test_handle_go(engine: GameEngine) -> None:
 def test_handle_attack(engine: GameEngine) -> None:
     """Validate combat loops, entity targeting, and damage application."""
     with (
-        patch("game.engine.narrate_combat", return_value="Slash!"),
+        patch("game.ai.AIGenerator.narrate_combat", return_value="Slash!"),
         patch("game.engine.GameUI.print") as mock_print,
     ):
         # Test valid attack
@@ -121,7 +121,9 @@ def test_handle_attack(engine: GameEngine) -> None:
 def test_handle_talk(engine: GameEngine) -> None:
     """Test NPC conversational loops and gracefully handling missing targets."""
     with (
-        patch("game.engine.generate_npc_response", side_effect=["Hello", "Bye"]),
+        patch(
+            "game.ai.AIGenerator.generate_npc_response", side_effect=["Hello", "Bye"]
+        ),
         patch("game.engine.GameUI.print") as mock_print,
         patch.object(engine, "get_input", side_effect=["hi", "leave"]),
     ):
@@ -216,7 +218,7 @@ def test_handle_use(engine: GameEngine) -> None:
     engine.player.hp = 10
 
     with (
-        patch("game.engine.narrate_item_use", return_value="Used!"),
+        patch("game.ai.AIGenerator.narrate_item_use", return_value="Used!"),
         patch("game.engine.GameUI.print") as mock_print,
     ):
         engine.handle_use(["use", "potion"])

@@ -11,7 +11,7 @@ from game.engine import GameEngine
 console = Console()
 
 
-def check_ollama_connection() -> None:
+def check_ollama_connection(required_model: str = "gemma4:e4b") -> None:
     """Verify that Ollama is running and the required model is available."""
     try:
         response = ollama.list()
@@ -30,7 +30,7 @@ def check_ollama_connection() -> None:
             elif isinstance(m, dict):
                 model_names.append(str(m.get("model") or m.get("name") or ""))
 
-        required_model = "gemma4:e4b"
+        # required_model is passed in as argument
         if required_model not in model_names:
             console.print(
                 f"[bold red]ERROR: Model '{required_model}' "
@@ -76,10 +76,16 @@ def main() -> None:
         default=1000,
         help="Maximum number of commands to keep in history (default: 1000)",
     )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="gemma4:e4b",
+        help="The Ollama model to use for the game (default: gemma4:e4b)",
+    )
     args = parser.parse_args()
 
-    check_ollama_connection()
-    engine = GameEngine(max_history=args.history_length)
+    check_ollama_connection(args.model)
+    engine = GameEngine(max_history=args.history_length, model=args.model)
     engine.start()
 
 
