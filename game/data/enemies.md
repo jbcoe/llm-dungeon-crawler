@@ -1,4 +1,5 @@
 # Enemy Types
+
 - Giant Rat: A rodent the size of a large dog, with matted, filthy fur and razor-sharp incisors.
 - Skeleton Warrior: The animated bones of a fallen soldier, still gripping a rusted sword and dented shield.
 - Cave Spider: A hairy arachnid with a leg span as wide as a man. It drops from the ceiling to ambush prey.

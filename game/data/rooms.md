@@ -1,4 +1,5 @@
 # Room Types
+
 - Alchemist's Laboratory: Filled with bubbling retorts, strange colored glass, and an overpowering scent of sulfur and ozone.
 - Forgotten Library: Tall bookshelves leaning precariously, filled with crumbling tomes and scrolls. Motes of dust dance in narrow shafts of light.
 - Torture Chamber: Rusty iron maidens, blood-stained racks, and chains hanging from the ceiling. A chilling draft blows through.

@@ -42,6 +42,10 @@ select = [
     "I",      # Isort
     "W",      # Pycodestyle
 ]
+ignore = [
+    "D203",  # one-blank-line-before-class (conflicts with D211)
+    "D212",  # multi-line-summary-first-line (conflicts with D213)
+]
 fixable = ["ALL"]
 unfixable = []
 
