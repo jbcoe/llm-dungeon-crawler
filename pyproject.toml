@@ -1,5 +1,5 @@
 [project]
-name = "dungeon-crawler"
+name = "llm-dungeon-crawler"
 version = "0.1.0"
 description = "A text-based dungeon crawler powered by Gemini API"
 readme = "README.md"
