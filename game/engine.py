@@ -1,16 +1,17 @@
 """Core game engine responsible for the game loop and command handling."""
 
-from game.models import Player, Room
+from pydantic import BaseModel
+from rich.console import Console
+
 from game.ai import (
+    generate_intro,
+    generate_npc_response,
     generate_room,
     narrate_combat,
-    generate_npc_response,
-    generate_intro,
     narrate_item_use,
 )
-from game.logger import setup_logger, log_event
-from rich.console import Console
-from pydantic import BaseModel
+from game.logger import log_event, setup_logger
+from game.models import Player, Room
 
 
 class CommandInfo(BaseModel):
@@ -188,7 +189,8 @@ class GameEngine:
         if not self.current_room:
             return
         console.print(
-            f"\n[bold cyan]Room Description:[/bold cyan] {self.current_room.description}"
+            f"\n[bold cyan]Room Description:[/bold cyan] "
+            f"{self.current_room.description}"
         )
         console.print(
             f"[bold yellow]Exits:[/bold yellow] {', '.join(self.current_room.exits)}"
@@ -201,7 +203,8 @@ class GameEngine:
         if self.current_room.enemies:
             for enemy in self.current_room.enemies:
                 console.print(
-                    f"[bold red]Enemy:[/bold red] {enemy.name} (HP: {enemy.hp}/{enemy.max_hp}) - {enemy.description}"
+                    f"[bold red]Enemy:[/bold red] {enemy.name} "
+                    f"(HP: {enemy.hp}/{enemy.max_hp}) - {enemy.description}"
                 )
         if self.current_room.npcs:
             for npc in self.current_room.npcs:
@@ -234,7 +237,7 @@ class GameEngine:
                 break
             elif action == "help":
                 console.print("\n[bold]Available Commands:[/bold]", markup=True)
-                for cmd, info in COMMANDS.items():
+                for _cmd, info in COMMANDS.items():
                     console.print(
                         f"  {info.usage.ljust(15)} - {info.desc}", markup=False
                     )
@@ -272,7 +275,8 @@ class GameEngine:
             self.player.equipped_weapon.name if self.player.equipped_weapon else "None"
         )
         console.print(
-            f"[bold magenta]Attack:[/bold magenta] {self.player.total_attack} (Base: {self.player.attack}, Weapon: {weapon_name})"
+            f"[bold magenta]Attack:[/bold magenta] {self.player.total_attack} "
+            f"(Base: {self.player.attack}, Weapon: {weapon_name})"
         )
         inventory = ", ".join([i.name for i in self.player.inventory]) or "Empty"
         console.print(f"[bold magenta]Inventory:[/bold magenta] {inventory}")
@@ -389,7 +393,8 @@ class GameEngine:
             return
 
         console.print(
-            f"[bold blue]You approach {npc.name}. (Type 'bye' or 'leave' to end the conversation)[/bold blue]"
+            f"[bold blue]You approach {npc.name}. "
+            "(Type 'bye' or 'leave' to end the conversation)[/bold blue]"
         )
         history = ""
         while True:
@@ -482,7 +487,8 @@ class GameEngine:
                     console.print(f"You can't use {item.name} like that yet.")
                 elif item.effect_type == "weapon":
                     console.print(
-                        f"To use [bold cyan]{item.name}[/bold cyan], you must 'equip' it."
+                        f"To use [bold cyan]{item.name}[/bold cyan], "
+                        "you must 'equip' it."
                     )
                 else:
                     room_desc = (
@@ -524,12 +530,15 @@ class GameEngine:
                     if self.player.equipped_weapon:
                         self.player.inventory.append(self.player.equipped_weapon)
                         console.print(
-                            f"You unequiped [bold cyan]{self.player.equipped_weapon.name}[/bold cyan]."
+                            "You unequipped "
+                            f"[bold cyan]{self.player.equipped_weapon.name}"
+                            "[/bold cyan]."
                         )
                     self.player.equipped_weapon = item
                     self.player.inventory.remove(item)
                     console.print(
-                        f"You equipped [bold cyan]{item.name}[/bold cyan]! Your attack is now {self.player.total_attack}."
+                        f"You equipped [bold cyan]{item.name}[/bold cyan]! "
+                        f"Your attack is now {self.player.total_attack}."
                     )
                 else:
                     console.print(f"You can't equip {item.name}. It's not a weapon.")
@@ -545,7 +554,8 @@ class GameEngine:
             self.player.inventory.append(item)
             self.player.equipped_weapon = None
             console.print(
-                f"You unequiped [bold cyan]{item.name}[/bold cyan]. Your attack is now {self.player.total_attack}."
+                f"You unequipped [bold cyan]{item.name}[/bold cyan]. "
+                f"Your attack is now {self.player.total_attack}."
             )
         else:
             console.print("You don't have a weapon equipped.")
