@@ -1,5 +1,5 @@
 from .models import Player, Room
-from .gemini import (
+from .ai import (
     generate_room,
     narrate_combat,
     generate_npc_response,

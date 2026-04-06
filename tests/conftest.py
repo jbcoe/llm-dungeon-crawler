@@ -3,15 +3,15 @@ from unittest.mock import patch
 
 
 @pytest.fixture(autouse=True)
-def mock_gemini_api():
-    """Mock the Gemini API calls globally for all tests."""
-    with patch("game.engine.generate_room") as mock_gen_room, patch(
-        "game.engine.narrate_combat"
-    ) as mock_narrate, patch(
-        "game.engine.generate_npc_response"
-    ) as mock_npc_resp, patch("game.engine.generate_intro") as mock_intro, patch(
-        "game.engine.narrate_item_use"
-    ) as mock_item_use:
+def mock_ai_api():
+    """Mock the AI API calls globally for all tests."""
+    with (
+        patch("game.engine.generate_room") as mock_gen_room,
+        patch("game.engine.narrate_combat") as mock_narrate,
+        patch("game.engine.generate_npc_response") as mock_npc_resp,
+        patch("game.engine.generate_intro") as mock_intro,
+        patch("game.engine.narrate_item_use") as mock_item_use,
+    ):
         mock_gen_room.return_value = {
             "description": "A mocked room for testing.",
             "exits": ["north", "south"],
