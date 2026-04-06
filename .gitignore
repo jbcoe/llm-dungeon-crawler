@@ -9,3 +9,13 @@ wheels/
 # Virtual environments
 .venv
 stories
+
+# Coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Cache
+.pytest_cache/
+.ruff_cache/
+.pyrefly_cache/
