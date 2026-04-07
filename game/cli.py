@@ -8,6 +8,7 @@ from rich.console import Console
 
 from game.ai import AIGenerator
 from game.engine import GameEngine
+from game.utils import get_model_name, models_match
 
 console = Console()
 
@@ -24,15 +25,11 @@ def check_ollama_connection(required_model: str = "gemma4:e4b") -> None:
             else response.get("models", [])
         )
 
-        model_names: list[str] = []
-        for m in models_list:
-            if hasattr(m, "model"):
-                model_names.append(str(m.model))
-            elif isinstance(m, dict):
-                model_names.append(str(m.get("model") or m.get("name") or ""))
+        model_names: list[str] = [get_model_name(m) for m in models_list]
 
-        # required_model is passed in as argument
-        if required_model not in model_names:
+        model_found = any(models_match(required_model, name) for name in model_names)
+
+        if not model_found:
             console.print(
                 f"[bold red]ERROR: Model '{required_model}' "
                 "not found in Ollama.[/bold red]"

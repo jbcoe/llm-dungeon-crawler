@@ -48,6 +48,25 @@ def test_check_ollama_connection_missing_model(
     mock_print.assert_called()
 
 
+@patch("ollama.list")
+def test_check_ollama_connection_tag_neutral(mock_list: MagicMock) -> None:
+    """Ensure that the CLI finds models even when :latest is implicit or explicit."""
+    # Scenario 1: Model is llama3:latest, user requests llama3
+    mock_model = MagicMock()
+    mock_model.model = "llama3:latest"
+    mock_list.return_value = MagicMock(models=[mock_model])
+
+    # Should not raise or exit
+    check_ollama_connection("llama3")
+
+    # Scenario 2: Model is llama3, user requests llama3:latest
+    mock_model.model = "llama3"
+    mock_list.return_value = MagicMock(models=[mock_model])
+
+    # Should not raise or exit
+    check_ollama_connection("llama3:latest")
+
+
 @patch("ollama.list", side_effect=Exception("Connection refused"))
 @patch("game.cli.console.print")
 def test_check_ollama_connection_error(
