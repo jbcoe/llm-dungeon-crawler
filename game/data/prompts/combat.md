@@ -4,7 +4,7 @@ Impact: {damage_dealt} damage dealt.
 Enemy Status: {enemy_hp} HP remaining.
 Player Status: {player_hp} HP remaining.
 
-Describe the violence of the exchange in 1-2 visceral sentences.
+Describe the action of the exchange in 1-2 fast-paced, exciting sentences.
 Return ONLY the narrative text. Do not provide options,
 choices, or commentary.
 
