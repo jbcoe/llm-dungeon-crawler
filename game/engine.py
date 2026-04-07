@@ -127,9 +127,9 @@ class GameEngine:
         ai_generator: AIGenerator | None = None,
     ) -> None:
         """Initialize the game engine."""
-        self.model = model
         self.player = Player()
         self.ai = ai_generator or AIGenerator(model=model)
+        self.model = self.ai.model
         self.floor = 1
         self.current_room: Room | None = None
         self.running = True

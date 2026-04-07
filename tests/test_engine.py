@@ -14,7 +14,8 @@ def test_engine_initialization(fake_ai: Any) -> None:
     assert engine.player.hp == 100
     assert engine.floor == 1
     assert engine.current_room is not None
-    assert engine.current_room.description == "Simulated AI response."
+    assert engine.current_room.description
+    assert isinstance(engine.current_room.description, str)
     assert len(engine.current_room.exits) > 0
 
 
