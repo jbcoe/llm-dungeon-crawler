@@ -8,28 +8,20 @@ The game uses **Ollama** and the **Gemma 4** model (by default) locally to gener
 
 Before you can play, you need the following installed on your host machine:
 
-1. **Python 3.12+**
-2. **uv** (Python package installer and resolver)
-3. **Ollama** (for running the local LLM)
+1. **[uv](https://docs.astral.sh/uv/)** (Python package manager)
+2. **[Ollama](https://ollama.com/)** (for running the local LLM)
 
 ## Setup & Running the Game
 
-1. **Start Ollama**
-   Ensure Ollama is running on your host machine:
-
-   ```bash
-   ollama serve
-   ```
-
-2. **Pull the Model**
-   Pull the default Gemma 4 model (or any other compatible model you wish to use):
+1. **Install and Pull the Model**
+   Ensure Ollama is installed, then pull the default Gemma 4 model (or any other compatible model you wish to use):
 
    ```bash
    ollama pull gemma4:e4b
    ```
 
-3. **Play!**
-   Launch the game directly on your host machine using the default model:
+2. **Play!**
+   Launch the game directly on your host machine. The game will automatically start the Ollama server for you if it isn't already running:
 
    ```bash
    uv run dungeon-crawler

@@ -62,14 +62,19 @@ def test_check_ollama_connection_error(
 
 
 @patch("sys.argv", ["dungeon-crawler", "--history-length", "50"])
+@patch("game.cli.AIGenerator.manage_ollama")
 @patch("game.cli.check_ollama_connection")
 @patch("game.cli.GameEngine")
-def test_main(mock_engine_cls: MagicMock, mock_check_conn: MagicMock) -> None:
+def test_main(
+    mock_engine_cls: MagicMock, mock_check_conn: MagicMock, mock_manage: MagicMock
+) -> None:
     """Ensure the CLI entry point correctly parses arguments and launches the engine."""
     mock_engine = mock_engine_cls.return_value
+    mock_manage.return_value.__enter__.return_value = None
 
     main()
 
+    mock_manage.assert_called_once_with("gemma4:e4b")
     mock_check_conn.assert_called_once_with("gemma4:e4b")
     mock_engine_cls.assert_called_once_with(max_history=50, model="gemma4:e4b")
     mock_engine.start.assert_called_once()
