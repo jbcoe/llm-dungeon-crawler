@@ -95,5 +95,7 @@ def test_main(
 
     mock_manage.assert_called_once_with("gemma4:e4b")
     mock_check_conn.assert_called_once_with("gemma4:e4b")
-    mock_engine_cls.assert_called_once_with(max_history=50, model="gemma4:e4b")
+    mock_engine_cls.assert_called_once_with(
+        max_history=50, model="gemma4:e4b", map_size=8
+    )
     mock_engine.start.assert_called_once()

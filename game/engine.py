@@ -6,6 +6,7 @@ from rich.markup import escape
 
 from game.ai import AIGenerator
 from game.logger import log_event, setup_logger
+from game.map import Map
 from game.models import Player, Room
 
 
@@ -124,6 +125,8 @@ class GameEngine:
         max_history: int = 1000,
         model: str = "gemma4:e4b",
         ai_generator: AIGenerator | None = None,
+        map_size: int = 8,
+        map_seed: int | None = None,
     ) -> None:
         """Initialize the game engine."""
         self.player = Player()
@@ -135,8 +138,9 @@ class GameEngine:
         self.history: list[str] = []
         self.max_history = max_history
         self.mock_input = mock_input
-        self.x = 0
-        self.y = 0
+        self.map_grid = Map(size=map_size, seed=map_seed)
+        self.x = 1
+        self.y = 1
         self.grid: dict[tuple[int, int], Room] = {}
         self.ui = GameUI()
         self.setup_readline()
@@ -245,10 +249,10 @@ class GameEngine:
                 if self.history
                 else "Beginning of the journey."
             )
+            map_exits: list[str] = []
             try:
-                room_data = self.ai.generate_room(
-                    self.floor, context, coords=coord, grid=self.grid
-                )
+                map_exits = self.map_grid.get_exits(self.x, self.y)
+                room_data = self.ai.generate_room(self.floor, context, exits=map_exits)
                 self.current_room = Room(**room_data)
                 self.grid[coord] = self.current_room
             except Exception as e:
@@ -257,7 +261,7 @@ class GameEngine:
                 self.current_room = Room(
                     name="Stone Chamber",
                     description="A non-descript stone chamber.",
-                    exits=["north"],
+                    exits=map_exits or ["north"],
                 )
                 self.grid[coord] = self.current_room
 

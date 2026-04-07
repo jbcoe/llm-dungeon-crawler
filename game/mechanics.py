@@ -73,27 +73,13 @@ def _get_item_mechanics(item_data: dict[str, str], floor: int) -> dict[str, Any]
 
 def generate_mechanics(
     floor: int,
-    coords: tuple[int, int] | None = None,
-    grid: dict[tuple[int, int], Any] | None = None,
+    exits: list[str] | None = None,
 ) -> dict[str, Any]:
     """Generate the mechanical components of a room based on the current floor."""
-    offsets = {"north": (0, 1), "south": (0, -1), "east": (1, 0), "west": (-1, 0)}
-    opposite = {"north": "south", "south": "north", "east": "west", "west": "east"}
-
-    if coords and grid is not None:
-        x, y = coords
-        exits: list[str] = []
-        for d, (dx, dy) in offsets.items():
-            neighbor = grid.get((x + dx, y + dy))
-            # Must connect if neighbor points back; otherwise 40% chance
-            # if neighbor is empty
-            if (neighbor and opposite[d] in neighbor.exits) or (
-                not neighbor and random.random() < 0.4
-            ):
-                exits.append(d)
-        exits = exits or [random.choice(list(offsets.keys()))]
-    else:
-        exits = random.sample(list(offsets.keys()), random.randint(1, 4))
+    if not exits:
+        exits_pool = ["north", "south", "east", "west"]
+        num_exits = random.randint(1, 4)
+        exits = random.sample(exits_pool, num_exits)
 
     room_type = (
         random.choice(ROOMS)

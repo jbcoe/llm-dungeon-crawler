@@ -148,11 +148,10 @@ class AIGenerator:
         self,
         floor: int,
         previous_context: str = "",
-        coords: tuple[int, int] | None = None,
-        grid: dict[tuple[int, int], Any] | None = None,
+        exits: list[str] | None = None,
     ) -> dict[str, Any]:
         """Generate a room description using AI based on current mechanics."""
-        mechanics = generate_mechanics(floor, coords=coords, grid=grid)
+        mechanics = generate_mechanics(floor, exits=exits)
 
         # Format lists for the prompt
         room_type_name = mechanics["room_type"]["name"]
