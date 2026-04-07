@@ -6,6 +6,7 @@ import os
 import signal
 import subprocess
 import time
+import urllib.parse
 from contextlib import contextmanager
 from functools import lru_cache
 from typing import Any, Generator
@@ -50,8 +51,18 @@ class AIGenerator:
         except Exception:
             server_was_running = False
 
+        host_env = os.environ.get("OLLAMA_HOST", "").strip()
+        is_local = True
+        if host_env:
+            if "://" not in host_env:
+                host_env = "http://" + host_env
+            parsed = urllib.parse.urlparse(host_env)
+            hostname = parsed.hostname or ""
+            if hostname not in ("127.0.0.1", "localhost", "0.0.0.0", "::1", ""):
+                is_local = False
+
         server_process = None
-        if not server_was_running:
+        if not server_was_running and is_local:
             try:
                 server_process = subprocess.Popen(
                     ["ollama", "serve"],
@@ -73,7 +84,8 @@ class AIGenerator:
             except OSError:
                 pass
 
-        model_was_loaded = False
+        # Use None to represent an unknown state
+        model_was_loaded: bool | None = None
         if server_was_running:
             try:
                 response = ps()
@@ -82,6 +94,7 @@ class AIGenerator:
                     if hasattr(response, "models")
                     else response.get("models", [])
                 )
+                model_was_loaded = False
                 for m in models_list:
                     name = getattr(m, "model", "") or m.get("model", "")
                     if name == model:
@@ -102,9 +115,9 @@ class AIGenerator:
                     server_process.wait(timeout=5)
                 except Exception:
                     pass
-            elif not model_was_loaded:
+            elif model_was_loaded is False:
                 try:
-                    # Unload the model if it was started by the game
+                    # Unload the model if we definitively know we started it
                     generate(model=model, keep_alive=0)
                 except Exception:
                     pass
