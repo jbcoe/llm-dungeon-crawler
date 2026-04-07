@@ -7,6 +7,9 @@ Write a haunting introduction for a new journey.
 3. Provide one cryptic reason for their arrival (an old map,
    a family curse, a whispered rumor).
 
-Use 3-4 sentences of high-quality dark fantasy prose.
+Use 1-2 sentences of high-quality dark fantasy prose.
 Return ONLY the narrative text. Do not provide options,
 choices, or commentary.
+
+Generated text should be one or two sentences of simple vocabulary,
+suitable for a reading age of 10.

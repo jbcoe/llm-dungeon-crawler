@@ -16,3 +16,6 @@ Focus on lighting, sound, smell, and the mood, reflecting the Room Type descript
 Incorporate the presence of any enemies, NPCs, or items seamlessly into the
 environment description.
 Return ONLY the descriptive text. Do not use JSON or code blocks.
+
+Generated text should be one or two sentences of simple vocabulary,
+suitable for a reading age of 10.
