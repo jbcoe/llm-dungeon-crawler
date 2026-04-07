@@ -246,7 +246,9 @@ class GameEngine:
                 else "Beginning of the journey."
             )
             try:
-                room_data = self.ai.generate_room(self.floor, context)
+                room_data = self.ai.generate_room(
+                    self.floor, context, coords=coord, grid=self.grid
+                )
                 self.current_room = Room(**room_data)
                 self.grid[coord] = self.current_room
             except Exception as e:
