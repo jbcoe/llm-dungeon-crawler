@@ -23,6 +23,7 @@ def test_combat(fake_ai: Any) -> None:
     """Test combat mechanics and enemy death."""
     engine = GameEngine(mock_input=["attack slime", "quit"], ai_generator=fake_ai)
     room = Room(
+        name="Test Room",
         description="Test",
         exits=["north"],
         enemies=[
@@ -50,6 +51,7 @@ def test_talk(fake_ai: Any) -> None:
         mock_input=["talk merchant", "hello", "bye", "quit"], ai_generator=fake_ai
     )
     room = Room(
+        name="Test Room",
         description="Test",
         exits=["north"],
         npcs=[
@@ -68,6 +70,7 @@ def test_autocompletion_options(fake_ai: Any) -> None:
     """Test that autocompletion returns expected command and entity words."""
     engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai)
     room = Room(
+        name="Test Room",
         description="Test Room",
         exits=["north", "east"],
         enemies=[
@@ -114,7 +117,7 @@ def test_history_tracking(fake_ai: Any) -> None:
     engine = GameEngine(
         mock_input=["look", "go north", "inventory", "quit"], ai_generator=fake_ai
     )
-    engine.current_room = Room(description="Test", exits=["north"])
+    engine.current_room = Room(name="Test Room", description="Test", exits=["north"])
     # Mock enter_new_room so it doesn't try to generate a real room when moving
     engine.enter_new_room = lambda direction="forward": None
     engine.game_loop()
@@ -127,7 +130,7 @@ def test_history_truncation(fake_ai: Any) -> None:
     engine = GameEngine(
         mock_input=["look", "look", "look", "quit"], max_history=2, ai_generator=fake_ai
     )
-    engine.current_room = Room(description="Test", exits=["north"])
+    engine.current_room = Room(name="Test Room", description="Test", exits=["north"])
     engine.game_loop()
 
     assert engine.history == ["look", "quit"]

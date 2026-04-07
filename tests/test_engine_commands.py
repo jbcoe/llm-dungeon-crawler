@@ -15,6 +15,7 @@ def engine(fake_ai: Any) -> GameEngine:
     engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai)
     engine.player = Player()
     engine.current_room = Room(
+        name="Test Room",
         description="A test room",
         exits=["north", "south"],
         items=[Item(name="Key", description="A rusty key")],
