@@ -80,11 +80,19 @@ def main() -> None:
         default="gemma4:e4b",
         help="The Ollama model to use for the game (default: gemma4:e4b)",
     )
+    parser.add_argument(
+        "--size",
+        type=int,
+        default=8,
+        help="The size of the pre-generated dungeon map (default: 8)",
+    )
     args = parser.parse_args()
 
     with AIGenerator.manage_ollama(args.model):
         check_ollama_connection(args.model)
-        engine = GameEngine(max_history=args.history_length, model=args.model)
+        engine = GameEngine(
+            max_history=args.history_length, model=args.model, map_size=args.size
+        )
         engine.start()
 
 
