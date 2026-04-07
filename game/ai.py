@@ -16,6 +16,7 @@ from ollama import chat, generate, ps
 
 from game.logger import log_event
 from game.mechanics import generate_mechanics
+from game.utils import get_model_name, models_match
 
 logger = logging.getLogger(__name__)
 
@@ -96,15 +97,8 @@ class AIGenerator:
                 )
                 model_was_loaded = False
                 for m in models_list:
-                    name = str(getattr(m, "model", "") or m.get("model", ""))
-                    if name == model:
-                        model_was_loaded = True
-                        break
-                    # Normalize comparison: name:latest vs name
-                    if ":" not in model and name == f"{model}:latest":
-                        model_was_loaded = True
-                        break
-                    if model.endswith(":latest") and name == model[: -len(":latest")]:
+                    name = get_model_name(m)
+                    if models_match(model, name):
                         model_was_loaded = True
                         break
             except Exception:
