@@ -7,8 +7,8 @@ from game.engine import GameEngine
 
 def test_bidirectional_exits() -> None:
     """Verify that moving into a new room follows the pre-generated map correctly."""
-    # Mocking random seed ensures predictable map generation
-    engine = GameEngine(model="test-model", map_size=8)
+    # Using a fixed seed ensures predictable map generation for testing
+    engine = GameEngine(model="test-model", map_size=8, map_seed=42)
     engine.ai._query_model = MagicMock(return_value="A test room description.")
 
     # Start at (1, 1).
@@ -48,7 +48,7 @@ def test_bidirectional_exits() -> None:
 
 def test_complex_grid_consistency() -> None:
     """Verify that Map generates internally consistent, bidirectional grids."""
-    engine = GameEngine(model="test-model", map_size=8)
+    engine = GameEngine(model="test-model", map_size=8, map_seed=42)
 
     dungeon_map = engine.map_grid
 

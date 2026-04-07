@@ -32,6 +32,14 @@ def test_load_data_file_not_found() -> None:
         assert result == []
 
 
+def test_generate_mechanics_empty_exits() -> None:
+    """Verify that an empty list of exits is treated as None."""
+    # When exits=[], it should generate random exits
+    mechanics = generate_mechanics(floor=1, exits=[])
+    assert len(mechanics["exits"]) > 0
+    assert all(e in ["north", "south", "east", "west"] for e in mechanics["exits"])
+
+
 @patch("game.mechanics.ENEMIES", [{"name": "Goblin", "description": "Ugly"}])
 @patch("game.mechanics.NPCS", [{"name": "Merchant", "description": "Sells"}])
 @patch("game.mechanics.ITEMS", [{"name": "Health Potion", "description": "Heals"}])

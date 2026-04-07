@@ -65,6 +65,14 @@ def check_history_length(value: str) -> int:
     return ivalue
 
 
+def check_map_size(value: str) -> int:
+    """Validate that the map size is at least 3."""
+    ivalue = int(value)
+    if ivalue < 3:
+        raise argparse.ArgumentTypeError(f"{value} is an invalid map size (min: 3)")
+    return ivalue
+
+
 def main() -> None:
     """Parse arguments and start the game engine."""
     parser = argparse.ArgumentParser(description="LLM Dungeon Crawler")
@@ -82,7 +90,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--size",
-        type=int,
+        type=check_map_size,
         default=8,
         help="The size of the pre-generated dungeon map (default: 8)",
     )

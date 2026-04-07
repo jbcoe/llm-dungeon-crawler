@@ -126,6 +126,7 @@ class GameEngine:
         model: str = "gemma4:e4b",
         ai_generator: AIGenerator | None = None,
         map_size: int = 8,
+        map_seed: int | None = None,
     ) -> None:
         """Initialize the game engine."""
         self.player = Player()
@@ -137,7 +138,7 @@ class GameEngine:
         self.history: list[str] = []
         self.max_history = max_history
         self.mock_input = mock_input
-        self.map_grid = Map(size=map_size)
+        self.map_grid = Map(size=map_size, seed=map_seed)
         self.x = 1
         self.y = 1
         self.grid: dict[tuple[int, int], Room] = {}
@@ -248,6 +249,7 @@ class GameEngine:
                 if self.history
                 else "Beginning of the journey."
             )
+            map_exits: list[str] = []
             try:
                 map_exits = self.map_grid.get_exits(self.x, self.y)
                 room_data = self.ai.generate_room(self.floor, context, exits=map_exits)
@@ -259,7 +261,7 @@ class GameEngine:
                 self.current_room = Room(
                     name="Stone Chamber",
                     description="A non-descript stone chamber.",
-                    exits=["north"],
+                    exits=map_exits or ["north"],
                 )
                 self.grid[coord] = self.current_room
 

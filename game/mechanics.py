@@ -76,7 +76,7 @@ def generate_mechanics(
     exits: list[str] | None = None,
 ) -> dict[str, Any]:
     """Generate the mechanical components of a room based on the current floor."""
-    if exits is None:
+    if not exits:
         exits_pool = ["north", "south", "east", "west"]
         num_exits = random.randint(1, 4)
         exits = random.sample(exits_pool, num_exits)

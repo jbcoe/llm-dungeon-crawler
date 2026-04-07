@@ -47,6 +47,16 @@ def test_coordinate() -> None:
     assert stepped == Coordinate(1, 3)
 
 
+def test_map_size_validation() -> None:
+    """Verify that Map size must be at least 3."""
+    import pytest
+
+    with pytest.raises(ValueError, match="Map size must be at least 3"):
+        Map(size=2)
+    with pytest.raises(ValueError, match="Map size must be at least 3"):
+        Map(size=-1)
+
+
 def test_map_initialization() -> None:
     """Verify Map initializes correctly and starts digging."""
     with patch("game.map.Digger.build_map") as mock_build:

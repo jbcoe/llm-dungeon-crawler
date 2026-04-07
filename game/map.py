@@ -60,7 +60,7 @@ class Digger:
         self, dungeon_map: "Map", location: Coordinate, seed: int = 101
     ) -> None:
         """Initialize the digger agent."""
-        random.seed(seed)
+        self._rng = random.Random(seed)
         self.dungeon_map = dungeon_map
         self.location = location
         self.dungeon_map.enter_cell(location)
@@ -73,7 +73,7 @@ class Digger:
             if len(possible_steps) == 0:
                 self.location = self.walk.pop()
                 continue
-            next_step = random.choice(possible_steps)
+            next_step = self._rng.choice(possible_steps)
             self.dungeon_map.dig_step(self.location, next_step)
             self.location = next_step
             self.walk.append(self.location)
@@ -84,6 +84,8 @@ class Map:
 
     def __init__(self, size: int = 8, seed: int | None = None) -> None:
         """Initialize and generate the map of a given size."""
+        if size < 3:
+            raise ValueError("Map size must be at least 3")
         self.size = size
         # True means path/visitable, False means wall
         self.space: npt.NDArray[np.bool_] = np.zeros((size, size), dtype=bool)
