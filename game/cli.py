@@ -6,6 +6,7 @@ import sys
 import ollama
 from rich.console import Console
 
+from game.ai import AIGenerator
 from game.engine import GameEngine
 
 console = Console()
@@ -84,9 +85,10 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    check_ollama_connection(args.model)
-    engine = GameEngine(max_history=args.history_length, model=args.model)
-    engine.start()
+    with AIGenerator.manage_ollama(args.model):
+        check_ollama_connection(args.model)
+        engine = GameEngine(max_history=args.history_length, model=args.model)
+        engine.start()
 
 
 if __name__ == "__main__":

@@ -2,10 +2,17 @@
 
 import importlib.resources
 import logging
+import os
+import signal
+import subprocess
+import time
+import urllib.parse
+from contextlib import contextmanager
 from functools import lru_cache
-from typing import Any
+from typing import Any, Generator
 
-from ollama import chat
+import ollama
+from ollama import chat, generate, ps
 
 from game.logger import log_event
 from game.mechanics import generate_mechanics
@@ -28,6 +35,92 @@ class AIGenerator:
     def __init__(self, model: str = "gemma4:e4b") -> None:
         """Initialize the AI generator with a specific model."""
         self.model = model
+
+    @staticmethod
+    @contextmanager
+    def manage_ollama(model: str) -> Generator[None, None, None]:
+        """
+        Manage the lifecycle of the Ollama model/server.
+
+        Ensures that the LLM (server or model) is stopped on exit if it was
+        started by the game.
+        """
+        server_was_running = True
+        try:
+            ollama.list()
+        except Exception:
+            server_was_running = False
+
+        host_env = os.environ.get("OLLAMA_HOST", "").strip()
+        is_local = True
+        if host_env:
+            if "://" not in host_env:
+                host_env = "http://" + host_env
+            parsed = urllib.parse.urlparse(host_env)
+            hostname = parsed.hostname or ""
+            if hostname not in ("127.0.0.1", "localhost", "0.0.0.0", "::1", ""):
+                is_local = False
+
+        server_process = None
+        if not server_was_running and is_local:
+            try:
+                server_process = subprocess.Popen(
+                    ["ollama", "serve"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+                # Wait for server to start (20s max, checking every 0.1s)
+                for _ in range(200):
+                    if server_process.poll() is not None:
+                        # Process died early (e.g. port already in use)
+                        break
+                    try:
+                        ollama.list()
+                        server_was_running = True
+                        break
+                    except Exception:
+                        time.sleep(0.1)
+            except OSError:
+                pass
+
+        # Use None to represent an unknown state
+        model_was_loaded: bool | None = None
+        if server_was_running:
+            try:
+                response = ps()
+                models_list = (
+                    getattr(response, "models", [])
+                    if hasattr(response, "models")
+                    else response.get("models", [])
+                )
+                model_was_loaded = False
+                for m in models_list:
+                    name = getattr(m, "model", "") or m.get("model", "")
+                    if name == model:
+                        model_was_loaded = True
+                        break
+            except Exception:
+                pass
+
+        try:
+            yield
+        finally:
+            if server_process:
+                try:
+                    if hasattr(os, "killpg"):
+                        os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
+                    else:
+                        server_process.terminate()
+                    server_process.wait(timeout=5)
+                except Exception:
+                    pass
+            elif model_was_loaded is False:
+                try:
+                    # Unload the model if we definitively know we started it
+                    generate(model=model, keep_alive=0)
+                except Exception:
+                    pass
 
     def _query_model(self, prompt: str, system_message: str | None = None) -> str:
         """Make a call to the AI model without silencing errors."""
