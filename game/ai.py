@@ -144,9 +144,15 @@ class AIGenerator:
         log_event(f"API_RESPONSE: {self.model}", content)
         return content
 
-    def generate_room(self, floor: int, previous_context: str = "") -> dict[str, Any]:
+    def generate_room(
+        self,
+        floor: int,
+        previous_context: str = "",
+        coords: tuple[int, int] | None = None,
+        grid: dict[tuple[int, int], Any] | None = None,
+    ) -> dict[str, Any]:
         """Generate a room description using AI based on current mechanics."""
-        mechanics = generate_mechanics(floor)
+        mechanics = generate_mechanics(floor, coords=coords, grid=grid)
 
         # Format lists for the prompt
         room_type_name = mechanics["room_type"]["name"]
