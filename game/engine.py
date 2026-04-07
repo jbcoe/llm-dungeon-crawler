@@ -78,9 +78,8 @@ class GameUI:
 
     def display_room(self, room: Room) -> None:
         """Print the description and contents of the current room."""
-        self.print(
-            f"\n[bold cyan]Room Description:[/bold cyan] {escape(room.description)}"
-        )
+        self.print(f"\n[bold cyan]Room: {escape(room.name)}[/bold cyan]")
+        self.print(f"{escape(room.description)}")
         self.print(f"[bold yellow]Exits:[/bold yellow] {', '.join(room.exits)}")
 
         if room.items:
@@ -254,7 +253,9 @@ class GameEngine:
                 log_event("ERROR: room_generation", str(e))
                 # Fallback room
                 self.current_room = Room(
-                    description="A non-descript stone chamber.", exits=["north"]
+                    name="Stone Chamber",
+                    description="A non-descript stone chamber.",
+                    exits=["north"],
                 )
                 self.grid[coord] = self.current_room
 

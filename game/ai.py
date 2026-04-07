@@ -181,6 +181,7 @@ class AIGenerator:
 
         description = self._query_model(prompt)
         mechanics["description"] = description
+        mechanics["name"] = room_type_name
 
         return mechanics
 

@@ -39,6 +39,7 @@ class NPC(GameModel):
 class Room(GameModel):
     """Represents a room in the dungeon."""
 
+    name: str
     description: str
     exits: list[str] = Field(default_factory=list)
     items: list[Item] = Field(default_factory=list)
