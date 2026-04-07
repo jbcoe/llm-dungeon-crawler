@@ -96,8 +96,15 @@ class AIGenerator:
                 )
                 model_was_loaded = False
                 for m in models_list:
-                    name = getattr(m, "model", "") or m.get("model", "")
+                    name = str(getattr(m, "model", "") or m.get("model", ""))
                     if name == model:
+                        model_was_loaded = True
+                        break
+                    # Normalize comparison: name:latest vs name
+                    if ":" not in model and name == f"{model}:latest":
+                        model_was_loaded = True
+                        break
+                    if model.endswith(":latest") and name == model[: -len(":latest")]:
                         model_was_loaded = True
                         break
             except Exception:

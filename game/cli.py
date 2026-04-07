@@ -31,8 +31,16 @@ def check_ollama_connection(required_model: str = "gemma4:e4b") -> None:
             elif isinstance(m, dict):
                 model_names.append(str(m.get("model") or m.get("name") or ""))
 
-        # required_model is passed in as argument
-        if required_model not in model_names:
+        # Normalize comparison: if a model is 'name:latest', it can be matched by 'name'
+        # and vice-versa.
+        model_found = required_model in model_names
+        if not model_found:
+            if ":" not in required_model:
+                model_found = f"{required_model}:latest" in model_names
+            elif required_model.endswith(":latest"):
+                model_found = required_model[: -len(":latest")] in model_names
+
+        if not model_found:
             console.print(
                 f"[bold red]ERROR: Model '{required_model}' "
                 "not found in Ollama.[/bold red]"

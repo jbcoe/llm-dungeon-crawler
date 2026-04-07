@@ -60,6 +60,39 @@ def test_manage_ollama_unknown_model_state(
     mock_generate.assert_not_called()
 
 
+@patch("game.ai.ollama.list")
+@patch("game.ai.ps")
+@patch("game.ai.generate")
+def test_manage_ollama_tag_neutral(
+    mock_generate: MagicMock, mock_ps: MagicMock, mock_list: MagicMock
+) -> None:
+    """Verify models running with different tags are not stopped on exit."""
+    mock_list.return_value = MagicMock()
+    mock_model = MagicMock()
+    mock_model.model = "llama3:latest"
+    mock_ps.return_value = MagicMock(models=[mock_model])
+
+    with AIGenerator.manage_ollama("llama3"):
+        pass
+
+    # Should NOT have called generate with keep_alive=0
+    mock_generate.assert_not_called()
+
+    # Reset mocks
+    mock_generate.reset_mock()
+    mock_ps.reset_mock()
+
+    # Reverse: Model is llama3, user requests llama3:latest
+    mock_model.model = "llama3"
+    mock_ps.return_value = MagicMock(models=[mock_model])
+
+    with AIGenerator.manage_ollama("llama3:latest"):
+        pass
+
+    # Should NOT have called generate with keep_alive=0
+    mock_generate.assert_not_called()
+
+
 @patch("game.ai.ollama.list", side_effect=Exception("Refused"))
 @patch("subprocess.Popen")
 def test_manage_ollama_remote_server(
