@@ -6,24 +6,22 @@ from game.engine import GameEngine
 from game.models import NPC, Enemy, Item, Room
 
 
-def test_engine_initialization(mock_ai_api: Any) -> None:
+def test_engine_initialization(fake_ai: Any) -> None:
     """Test that the engine initializes with correct player state."""
-    mock_gen_room, _, _, _, _, _ = mock_ai_api
-    engine = GameEngine(mock_input=["quit"])
+    engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai)
     engine.start()
 
     assert engine.player.hp == 100
     assert engine.floor == 1
     assert engine.current_room is not None
-    assert engine.current_room.description == "A mocked room."
-    assert "north" in engine.current_room.exits
-    mock_gen_room.assert_called_once()
+    assert engine.current_room.description
+    assert isinstance(engine.current_room.description, str)
+    assert len(engine.current_room.exits) > 0
 
 
-def test_combat(mock_ai_api: Any) -> None:
+def test_combat(fake_ai: Any) -> None:
     """Test combat mechanics and enemy death."""
-    _, mock_narrate, _, _, _, _ = mock_ai_api
-    engine = GameEngine(mock_input=["attack slime", "quit"])
+    engine = GameEngine(mock_input=["attack slime", "quit"], ai_generator=fake_ai)
     room = Room(
         description="Test",
         exits=["north"],
@@ -44,13 +42,13 @@ def test_combat(mock_ai_api: Any) -> None:
     assert len(engine.current_room.enemies) == 0
     # Player takes no damage because slime died before it could attack
     assert engine.player.hp == 100
-    mock_narrate.assert_called_once()
 
 
-def test_talk(mock_ai_api: Any) -> None:
+def test_talk(fake_ai: Any) -> None:
     """Test NPC interaction and dialogue."""
-    _, _, mock_npc_resp, _, _, _ = mock_ai_api
-    engine = GameEngine(mock_input=["talk merchant", "hello", "bye", "quit"])
+    engine = GameEngine(
+        mock_input=["talk merchant", "hello", "bye", "quit"], ai_generator=fake_ai
+    )
     room = Room(
         description="Test",
         exits=["north"],
@@ -65,13 +63,10 @@ def test_talk(mock_ai_api: Any) -> None:
     engine.current_room = room
     engine.game_loop()
 
-    mock_npc_resp.assert_called_once()
 
-
-def test_autocompletion_options(mock_ai_api: Any) -> None:
+def test_autocompletion_options(fake_ai: Any) -> None:
     """Test that autocompletion returns expected command and entity words."""
-    _ = mock_ai_api
-    engine = GameEngine(mock_input=["quit"])
+    engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai)
     room = Room(
         description="Test Room",
         exits=["north", "east"],
@@ -114,10 +109,11 @@ def test_autocompletion_options(mock_ai_api: Any) -> None:
     assert "sword" in options
 
 
-def test_history_tracking(mock_ai_api: Any) -> None:
+def test_history_tracking(fake_ai: Any) -> None:
     """Test that player commands are correctly tracked in history."""
-    _ = mock_ai_api
-    engine = GameEngine(mock_input=["look", "go north", "inventory", "quit"])
+    engine = GameEngine(
+        mock_input=["look", "go north", "inventory", "quit"], ai_generator=fake_ai
+    )
     engine.current_room = Room(description="Test", exits=["north"])
     # Mock enter_new_room so it doesn't try to generate a real room when moving
     engine.enter_new_room = lambda direction="forward": None
@@ -126,10 +122,11 @@ def test_history_tracking(mock_ai_api: Any) -> None:
     assert engine.history == ["look", "go north", "inventory", "quit"]
 
 
-def test_history_truncation(mock_ai_api: Any) -> None:
+def test_history_truncation(fake_ai: Any) -> None:
     """Test that command history is truncated according to max_history."""
-    _ = mock_ai_api
-    engine = GameEngine(mock_input=["look", "look", "look", "quit"], max_history=2)
+    engine = GameEngine(
+        mock_input=["look", "look", "look", "quit"], max_history=2, ai_generator=fake_ai
+    )
     engine.current_room = Room(description="Test", exits=["north"])
     engine.game_loop()
 

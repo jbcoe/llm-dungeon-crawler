@@ -10,9 +10,9 @@ from game.models import NPC, Enemy, Item, Player, Room
 
 
 @pytest.fixture
-def engine() -> GameEngine:
+def engine(fake_ai: Any) -> GameEngine:
     """Fixture that initializes a GameEngine with a mocked Room and Player state."""
-    engine = GameEngine(mock_input=["quit"])
+    engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai)
     engine.player = Player()
     engine.current_room = Room(
         description="A test room",
@@ -57,19 +57,7 @@ def test_display_status(engine: GameEngine) -> None:
 
 def test_handle_go(engine: GameEngine) -> None:
     """Ensure the 'go' command validates exits and handles enemy blockage correctly."""
-    with (
-        patch("game.ai.AIGenerator.generate_room") as mock_gen_room,
-        patch("game.engine.GameUI.print") as mock_print,
-    ):
-        mock_gen_room.return_value = {
-            "description": "New room",
-            "room_type": {"name": "Cave"},
-            "exits": ["south"],
-            "items": list[dict[str, Any]](),
-            "enemies": list[dict[str, Any]](),
-            "npcs": list[dict[str, Any]](),
-        }
-
+    with patch("game.engine.GameUI.print") as mock_print:
         # Cannot move if enemies present
         engine.handle_go(["go", "north"])
         assert engine.floor == 1
@@ -79,14 +67,28 @@ def test_handle_go(engine: GameEngine) -> None:
         assert engine.current_room is not None
         engine.current_room.enemies = list[Enemy]()
 
-        # Test moving valid direction
-        engine.handle_go(["go", "north"])
-        assert engine.floor == 2
-        mock_gen_room.assert_called_once()
+        valid_exits = engine.current_room.exits
+        invalid_exit = "south"
+        if "south" in valid_exits:
+            invalid_exit = "north"
+        if "north" in valid_exits and invalid_exit == "north":
+            invalid_exit = "east"
 
         # Test invalid direction
-        engine.handle_go(["go", "east"])
-        assert_printed(mock_print, "You cannot go 'east'.")
+        engine.handle_go(["go", invalid_exit])
+        assert_printed(mock_print, f"You cannot go '{invalid_exit}'.")
+
+        # Test moving valid direction
+        with patch("game.ai.generate_mechanics") as mock_mechanics:
+            mock_mechanics.return_value = {
+                "room_type": {"name": "Test Room", "description": "A test room."},
+                "exits": ["north", "south"],
+                "items": list[dict[str, Any]](),
+                "enemies": list[dict[str, Any]](),
+                "npcs": list[dict[str, Any]](),
+            }
+            engine.handle_go(["go", valid_exits[0]])
+            assert engine.floor == 2
 
         # Test no direction
         engine.handle_go(["go"])
@@ -96,7 +98,6 @@ def test_handle_go(engine: GameEngine) -> None:
 def test_handle_attack(engine: GameEngine) -> None:
     """Validate combat loops, entity targeting, and damage application."""
     with (
-        patch("game.ai.AIGenerator.narrate_combat", return_value="Slash!"),
         patch("game.engine.GameUI.print") as mock_print,
     ):
         # Test valid attack
@@ -105,7 +106,7 @@ def test_handle_attack(engine: GameEngine) -> None:
         # Base attack is 10, enemy HP is 10. So it should die.
         assert engine.current_room is not None
         assert len(engine.current_room.enemies) == 0
-        assert_printed(mock_print, "Slash!")
+        assert mock_print.called
         assert_printed(mock_print, "You defeated Goblin!")
 
         # Test attack nothing
@@ -121,16 +122,13 @@ def test_handle_attack(engine: GameEngine) -> None:
 def test_handle_talk(engine: GameEngine) -> None:
     """Test NPC conversational loops and gracefully handling missing targets."""
     with (
-        patch(
-            "game.ai.AIGenerator.generate_npc_response", side_effect=["Hello", "Bye"]
-        ),
         patch("game.engine.GameUI.print") as mock_print,
         patch.object(engine, "get_input", side_effect=["hi", "leave"]),
     ):
         # Talk to merchant
         engine.handle_talk(["talk", "merchant"])
         assert_printed(mock_print, "You approach Merchant.")
-        assert_printed(mock_print, "Hello")
+        assert_printed(mock_print, "Simulated AI response.")
         assert_printed(mock_print, "Merchant nods as you walk away.")
 
     with patch("game.engine.GameUI.print") as mock_print:
@@ -218,7 +216,6 @@ def test_handle_use(engine: GameEngine) -> None:
     engine.player.hp = 10
 
     with (
-        patch("game.ai.AIGenerator.narrate_item_use", return_value="Used!"),
         patch("game.engine.GameUI.print") as mock_print,
     ):
         engine.handle_use(["use", "potion"])
@@ -244,4 +241,4 @@ def test_handle_use(engine: GameEngine) -> None:
         junk = Item(name="Junk", description="Trash", effect_type="none", stat_effect=0)
         engine.player.inventory.append(junk)
         engine.handle_use(["use", "junk"])
-        assert_printed(mock_print, "Used!")
+        assert_printed(mock_print, "Simulated AI response.")

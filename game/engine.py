@@ -124,11 +124,12 @@ class GameEngine:
         mock_input: list[str] | None = None,
         max_history: int = 1000,
         model: str = "gemma4:e4b",
+        ai_generator: AIGenerator | None = None,
     ) -> None:
         """Initialize the game engine."""
-        self.model = model
         self.player = Player()
-        self.ai = AIGenerator(model=model)
+        self.ai = ai_generator or AIGenerator(model=model)
+        self.model = self.ai.model
         self.floor = 1
         self.current_room: Room | None = None
         self.running = True
