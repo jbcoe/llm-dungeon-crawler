@@ -243,3 +243,79 @@ def test_handle_use(engine: GameEngine) -> None:
         engine.player.inventory.append(junk)
         engine.handle_use(["use", "junk"])
         assert_printed(mock_print, "Simulated AI response.")
+
+
+def test_handle_rest_blocked_by_enemies(engine: GameEngine) -> None:
+    """Verify that the player cannot rest while enemies are present."""
+    with patch("game.engine.GameUI.print") as mock_print:
+        # Engine fixture has a Goblin enemy present
+        engine.handle_rest()
+        assert_printed(mock_print, "You can't rest while enemies are present!")
+        # HP should be unchanged
+        assert engine.player.hp == engine.player.max_hp
+
+
+def test_handle_rest_recovers_hp(engine: GameEngine) -> None:
+    """Ensure resting heals the player when no enemies are present."""
+    assert engine.current_room is not None
+    engine.current_room.enemies = []
+    engine.player.hp = 50  # Damage the player
+
+    with (
+        patch("game.engine.GameUI.print") as mock_print,
+        patch("random.random", return_value=1.0),  # Prevent enemy spawn
+    ):
+        engine.handle_rest()
+        assert engine.player.hp > 50
+        assert_printed(mock_print, "You rest awhile and recover")
+        assert_printed(mock_print, "Simulated AI response.")
+
+
+def test_handle_rest_hp_does_not_exceed_max(engine: GameEngine) -> None:
+    """Confirm HP recovery is capped at the player's max HP."""
+    assert engine.current_room is not None
+    engine.current_room.enemies = []
+    engine.player.hp = engine.player.max_hp  # Already at full HP
+
+    with patch("random.random", return_value=1.0):  # Prevent enemy spawn
+        engine.handle_rest()
+        assert engine.player.hp == engine.player.max_hp
+
+
+def test_handle_rest_enemy_can_spawn(engine: GameEngine) -> None:
+    """Check that an enemy is added to the room when a spawn is triggered."""
+    assert engine.current_room is not None
+    engine.current_room.enemies = []
+
+    with (
+        patch("game.engine.GameUI.print") as mock_print,
+        patch("random.random", return_value=0.0),  # Force enemy spawn
+        patch(
+            "game.engine.ENEMIES",
+            [{"name": "Shadow Rat", "description": "A sneaky rodent."}],
+        ),
+    ):
+        engine.handle_rest()
+        assert len(engine.current_room.enemies) == 1
+        assert engine.current_room.enemies[0].name == "Shadow Rat"
+        assert_printed(mock_print, "Shadow Rat")
+        assert_printed(mock_print, "appears while you rested")
+        # rest_count resets after a spawn
+        assert engine.rest_count == 0
+
+
+def test_handle_rest_count_increments(engine: GameEngine) -> None:
+    """Confirm rest_count increases with each rest and resets on room change."""
+    assert engine.current_room is not None
+    engine.current_room.enemies = []
+
+    with patch("random.random", return_value=1.0):  # Prevent enemy spawn
+        assert engine.rest_count == 0
+        engine.handle_rest()
+        assert engine.rest_count == 1
+        engine.handle_rest()
+        assert engine.rest_count == 2
+
+    # Entering a new room resets the counter
+    engine.enter_new_room("start")
+    assert engine.rest_count == 0

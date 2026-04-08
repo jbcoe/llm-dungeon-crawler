@@ -1,5 +1,7 @@
 """Core game engine responsible for the game loop and command handling."""
 
+import random
+
 from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.markup import escape
@@ -7,7 +9,8 @@ from rich.markup import escape
 from game.ai import AIGenerator
 from game.logger import log_event, setup_logger
 from game.map import Map
-from game.models import Player, Room
+from game.mechanics import ENEMIES
+from game.models import Enemy, Player, Room
 
 
 class CommandInfo(BaseModel):
@@ -52,7 +55,16 @@ COMMANDS: dict[str, CommandInfo] = {
     ),
     "help": CommandInfo(usage="help", desc="Show this help message"),
     "quit": CommandInfo(usage="quit", desc="Exit the game", aliases=["exit"]),
+    "rest": CommandInfo(
+        usage="rest",
+        desc="Rest awhile to recover HP (enemies may appear)",
+    ),
 }
+
+# Enemy spawn probability when resting: starts at 20%, increases by 15% per
+# consecutive rest in the same room, capped at 95%.
+_REST_BASE_SPAWN_CHANCE = 0.20
+_REST_SPAWN_INCREMENT = 0.15
 
 
 class GameUI:
@@ -143,6 +155,7 @@ class GameEngine:
         self.y = 1
         self.grid: dict[tuple[int, int], Room] = {}
         self.ui = GameUI()
+        self.rest_count = 0
         self.setup_readline()
 
     def setup_readline(self) -> None:
@@ -227,6 +240,7 @@ class GameEngine:
 
     def enter_new_room(self, direction: str) -> None:
         """Handle moving into a new or existing room."""
+        self.rest_count = 0
         if direction == "north":
             self.y += 1
         elif direction == "south":
@@ -308,6 +322,8 @@ class GameEngine:
                 self.handle_equip(parts)
             elif action == "unequip":
                 self.handle_unequip()
+            elif action == "rest":
+                self.handle_rest()
             else:
                 self.ui.print("Unknown command. Type 'help'.")
 
@@ -589,3 +605,50 @@ class GameEngine:
             )
         else:
             self.ui.print("You don't have a weapon equipped.")
+
+    def handle_rest(self) -> None:
+        """Handle the rest command - player rests, risking enemy spawns."""
+        if not self.current_room:
+            return
+
+        if self.current_room.enemies:
+            self.ui.print_error("You can't rest while enemies are present!")
+            return
+
+        # Recover a portion of max HP (20%, minimum 5)
+        heal_amount = max(5, self.player.max_hp // 5)
+        hp_before = self.player.hp
+        self.player.heal(heal_amount)
+        actual_healed = self.player.hp - hp_before
+
+        self.ui.print(
+            f"You rest awhile and recover {actual_healed} HP. "
+            f"HP: {self.player.hp}/{self.player.max_hp}"
+        )
+
+        narrative = self.ai.narrate_rest(self.player.hp, self.player.max_hp)
+        self.ui.print_italic(narrative)
+
+        # Enemy spawn probability increases with each consecutive rest in the same room
+        # First rest: 20%, second: 35%, third: 50%, etc., capped at 95%
+        spawn_chance = min(
+            _REST_BASE_SPAWN_CHANCE + self.rest_count * _REST_SPAWN_INCREMENT, 0.95
+        )
+        self.rest_count += 1
+
+        if ENEMIES and random.random() < spawn_chance:
+            enemy_data = random.choice(ENEMIES)
+            hp = 10 + self.floor * 5
+            attack = 3 + self.floor * 2
+            new_enemy = Enemy(
+                name=enemy_data["name"],
+                description=enemy_data["description"],
+                hp=hp,
+                max_hp=hp,
+                attack=attack,
+            )
+            self.current_room.enemies.append(new_enemy)
+            self.ui.print(
+                f"[bold red]A {new_enemy.name} appears while you rested![/bold red]"
+            )
+            self.rest_count = 0
