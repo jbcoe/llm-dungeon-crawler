@@ -100,11 +100,10 @@ def test_handle_attack(engine: GameEngine) -> None:
     """Validate combat loops, entity targeting, and damage application."""
     with (
         patch("game.engine.GameUI.print") as mock_print,
+        patch("game.engine.random.randint", return_value=10),
     ):
-        # Test valid attack
+        # Test valid attack – damage is pinned to 10, enemy HP is 10. So it dies.
         engine.handle_attack(["attack", "goblin"])
-        # Enemy should take damage or die depending on player damage.
-        # Base attack is 10, enemy HP is 10. So it should die.
         assert engine.current_room is not None
         assert len(engine.current_room.enemies) == 0
         assert mock_print.called
