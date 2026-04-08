@@ -1,6 +1,7 @@
 """Tests for the game engine logic."""
 
 from typing import Any
+from unittest.mock import patch
 
 from game.engine import GameEngine
 from game.models import NPC, Enemy, Item, Room
@@ -37,7 +38,8 @@ def test_combat(fake_ai: Any) -> None:
         ],
     )
     engine.current_room = room
-    engine.game_loop()
+    with patch("game.engine.random.randint", return_value=10):
+        engine.game_loop()
 
     # Slime should have taken 10 damage from player's attack of 10 and died
     assert len(engine.current_room.enemies) == 0

@@ -343,9 +343,11 @@ class GameEngine:
 
     @staticmethod
     def _roll_damage(base: int) -> int:
-        """Return a randomized damage value in the range [75%, 125%] of base."""
-        lo = max(1, int(base * 0.75))
-        hi = max(1, int(base * 1.25))
+        """Return 0 if base <= 0, else randomized damage in [75%, 125%] of base."""
+        if base <= 0:
+            return 0
+        lo = max(1, base * 75 // 100)
+        hi = max(1, base * 125 // 100)
         return random.randint(lo, hi)
 
     def handle_attack(self, parts: list[str]) -> None:
