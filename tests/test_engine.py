@@ -1,6 +1,7 @@
 """Tests for the game engine logic."""
 
 from typing import Any
+from unittest.mock import patch
 
 from game.engine import GameEngine
 from game.models import NPC, Enemy, Item, Room
@@ -37,7 +38,8 @@ def test_combat(fake_ai: Any) -> None:
         ],
     )
     engine.current_room = room
-    engine.game_loop()
+    with patch("game.engine.random.randint", return_value=10):
+        engine.game_loop()
 
     # Slime should have taken 10 damage from player's attack of 10 and died
     assert len(engine.current_room.enemies) == 0
@@ -86,7 +88,7 @@ def test_autocompletion_options(fake_ai: Any) -> None:
         items=[Item(name="Health Potion", description="test")],
     )
     engine.current_room = room
-    engine.player.inventory = [type("MockItem", (), {"name": "Rusty Sword"})()]
+    engine.player.inventory = [Item(name="Rusty Sword", description="An old sword")]
 
     options = engine.get_completion_options()
 

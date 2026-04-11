@@ -96,19 +96,40 @@ def test_handle_go(engine: GameEngine) -> None:
         assert_printed(mock_print, "Go where?")
 
 
+def test_roll_damage() -> None:
+    """Unit-test _roll_damage bounds and edge cases."""
+    # Non-positive base always returns 0
+    assert GameEngine._roll_damage(0) == 0
+    assert GameEngine._roll_damage(-5) == 0
+
+    # For a given base the roll is always within [75%, 125%]
+    for base in (1, 4, 10, 100):
+        lo = max(1, base * 75 // 100)
+        hi = max(1, base * 125 // 100)
+        for _ in range(50):
+            result = GameEngine._roll_damage(base)
+            assert lo <= result <= hi, f"base={base}: {result} not in [{lo}, {hi}]"
+
+    # Verify the exact randint call for base=10
+    with patch("game.engine.random.randint", return_value=9) as mock_randint:
+        result = GameEngine._roll_damage(10)
+        assert result == 9
+        mock_randint.assert_called_once_with(7, 12)  # 10*75//100=7, 10*125//100=12
+
+
 def test_handle_attack(engine: GameEngine) -> None:
     """Validate combat loops, entity targeting, and damage application."""
     with (
         patch("game.engine.GameUI.print") as mock_print,
+        patch("game.engine.random.randint", return_value=10) as mock_randint,
     ):
-        # Test valid attack
+        # Player attack base=10 → lo=7, hi=12. Pinned to 10 → enemy (hp=10) dies.
         engine.handle_attack(["attack", "goblin"])
-        # Enemy should take damage or die depending on player damage.
-        # Base attack is 10, enemy HP is 10. So it should die.
         assert engine.current_room is not None
         assert len(engine.current_room.enemies) == 0
         assert mock_print.called
         assert_printed(mock_print, "You defeated Goblin!")
+        mock_randint.assert_called_with(7, 12)  # lo=10*75//100, hi=10*125//100
 
         # Test attack nothing
         engine.handle_attack(["attack"])
@@ -118,6 +139,33 @@ def test_handle_attack(engine: GameEngine) -> None:
         engine.current_room.enemies.append(Enemy(name="Orc", description="Big"))
         engine.handle_attack(["attack", "dragon"])
         assert_printed(mock_print, "No enemy named 'dragon' here.")
+
+
+def test_handle_attack_enemy_survives(engine: GameEngine) -> None:
+    """Validate combat when the enemy survives and strikes back."""
+    with (
+        patch("game.engine.GameUI.print") as mock_print,
+        patch("game.engine.random.randint", side_effect=[8, 6]) as mock_randint,
+    ):
+        # Player (attack=10) attacks Goblin (hp=10). _roll_damage(10) -> returns 8.
+        # Goblin HP: 10 - 8 = 2. Survives.
+        # Goblin (attack=5) attacks Player (hp=100). _roll_damage(5) -> returns 6.
+        # Player HP: 100 - 6 = 94.
+        engine.handle_attack(["attack", "goblin"])
+
+        assert engine.current_room is not None
+        assert len(engine.current_room.enemies) == 1
+        assert engine.current_room.enemies[0].hp == 2
+        assert engine.player.hp == 94
+        assert_printed(mock_print, "You attack Goblin for 8 damage!")
+        assert_printed(mock_print, "Goblin attacks you for 6 damage!")
+
+        # Verify randint calls:
+        # 1. Player attack: base=10 -> lo=7, hi=12
+        # 2. Enemy attack: base=5 -> lo=3, hi=6
+        assert mock_randint.call_count == 2
+        mock_randint.assert_any_call(7, 12)
+        mock_randint.assert_any_call(3, 6)
 
 
 def test_handle_talk(engine: GameEngine) -> None:

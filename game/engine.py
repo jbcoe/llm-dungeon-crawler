@@ -1,5 +1,7 @@
 """Core game engine responsible for the game loop and command handling."""
 
+import random
+
 from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.markup import escape
@@ -339,6 +341,15 @@ class GameEngine:
         else:
             self.ui.print("Go where?")
 
+    @staticmethod
+    def _roll_damage(base: int) -> int:
+        """Return 0 if base <= 0, else randomized damage in [75%, 125%] of base."""
+        if base <= 0:
+            return 0
+        lo = max(1, base * 75 // 100)
+        hi = max(1, base * 125 // 100)
+        return random.randint(lo, hi)
+
     def handle_attack(self, parts: list[str]) -> None:
         """Handle the attack command."""
         if not self.current_room or not self.current_room.enemies:
@@ -371,14 +382,14 @@ class GameEngine:
             self.ui.print(f"No enemy named '{target_name}' here.")
             return
 
-        # Player attacks
-        damage = self.player.total_attack
+        # Player attacks with randomized damage
+        damage = self._roll_damage(self.player.total_attack)
         enemy.hp -= damage
         self.ui.print(f"You attack {enemy.name} for {damage} damage!")
 
-        # Enemy attacks if still alive
+        # Enemy attacks if still alive, also with randomized damage
         if enemy.hp > 0:
-            enemy_damage = enemy.attack
+            enemy_damage = self._roll_damage(enemy.attack)
             self.player.take_damage(enemy_damage)
             self.ui.print(f"{enemy.name} attacks you for {enemy_damage} damage!")
         else:
