@@ -367,3 +367,10 @@ def test_handle_rest_count_increments(engine: GameEngine) -> None:
     # Entering a new room resets the counter
     engine.enter_new_room("start")
     assert engine.rest_count == 0
+
+
+def test_handle_rest_no_room(engine: GameEngine) -> None:
+    """Verify that rest command does nothing if there is no current room."""
+    engine.current_room = None
+    # Just calling it to ensure it returns early without error
+    engine.handle_rest()
