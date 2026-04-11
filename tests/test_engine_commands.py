@@ -394,10 +394,10 @@ def test_handle_map(engine: GameEngine) -> None:
         assert_printed(mock_print, "Dungeon Map:")
 
         # Check for current position marker
-        assert_printed(mock_print, "*")
+        assert_printed(mock_print, "[bold red]*[/bold red]")
 
         # Check for unexplored exit marker
-        assert_printed(mock_print, "?")
+        assert_printed(mock_print, "[white]?[/white]")
 
 
 def test_map_integration(engine: GameEngine) -> None:
@@ -407,7 +407,7 @@ def test_map_integration(engine: GameEngine) -> None:
         engine.x, engine.y = 1, 1
         engine.grid[(1, 1)] = Room(name="Start", description="Start", exits=["north"])
         engine.handle_map()
-        assert_printed(mock_print, "*")
+        assert_printed(mock_print, "[bold red]*[/bold red]")
 
         # Mock moving north
         engine.x, engine.y = 1, 2
@@ -419,5 +419,5 @@ def test_map_integration(engine: GameEngine) -> None:
         engine.handle_map()
 
         # Now (1, 2) should be * and (1, 1) should be o
-        assert_printed(mock_print, "*")
-        assert_printed(mock_print, "o")
+        assert_printed(mock_print, "[bold red]*[/bold red]")
+        assert_printed(mock_print, "[bold green]o[/bold green]")
