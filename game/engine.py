@@ -59,6 +59,10 @@ COMMANDS: dict[str, CommandInfo] = {
         usage="rest",
         desc="Rest awhile to recover HP (enemies may appear)",
     ),
+    "map": CommandInfo(
+        usage="map",
+        desc="Show a map of explored rooms",
+    ),
 }
 
 # Enemy spawn probability when resting: starts at 20%, increases by 15% per
@@ -126,6 +130,39 @@ class GameUI:
         )
         inventory = ", ".join([i.name for i in player.inventory]) or "Empty"
         self.print(f"[bold magenta]Inventory:[/bold magenta] {inventory}")
+
+    def display_map(
+        self,
+        map_grid: Map,
+        current_pos: tuple[int, int],
+        explored: set[tuple[int, int]],
+    ) -> None:
+        """Display an ASCII art map of the dungeon."""
+        self.print("\n[bold yellow]Dungeon Map:[/bold yellow]")
+
+        # Directions: NORTH is (0, 1), so top row is max y
+        for y in range(map_grid.size - 1, -1, -1):
+            row: list[str] = []
+            for x in range(map_grid.size):
+                coord = (x, y)
+                if coord == current_pos:
+                    row.append("[bold red]*[/bold red]")
+                elif coord in explored:
+                    row.append("[bold green]o[/bold green]")
+                elif map_grid.space[x, y]:
+                    # Check if it's an unexplored exit (adjacent to explored)
+                    is_unexplored_exit = False
+                    for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                        if (x + dx, y + dy) in explored:
+                            is_unexplored_exit = True
+                            break
+                    if is_unexplored_exit:
+                        row.append("[white]?[/white]")
+                    else:
+                        row.append(" ")
+                else:
+                    row.append(" ")
+            self.print(" ".join(row))
 
 
 class GameEngine:
@@ -306,6 +343,8 @@ class GameEngine:
             elif action == "look":
                 if self.current_room:
                     self.ui.display_room(self.current_room)
+            elif action == "map":
+                self.handle_map()
             elif action in ["status", "inventory", "i", "stats", "me"]:
                 self.ui.display_status(self.player)
             elif action == "go":
@@ -336,6 +375,10 @@ class GameEngine:
         self.ui.print("\n[bold]Available Commands:[/bold]")
         for info in COMMANDS.values():
             self.ui.print(f"  {info.usage.ljust(15)} - {info.desc}")
+
+    def handle_map(self) -> None:
+        """Handle the map command."""
+        self.ui.display_map(self.map_grid, (self.x, self.y), set(self.grid.keys()))
 
     def handle_go(self, parts: list[str]) -> None:
         """Handle the go command."""
