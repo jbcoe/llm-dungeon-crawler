@@ -11,15 +11,17 @@ This project uses two different AI systems for distinct purposes:
 
 ### Compliance & API Usage
 
-**Important:** To comply with the [Gemini CLI Terms of Use](https://geminicli.com/docs/resources/tos-privacy/), the sandbox environment **must** use a paid API key (via Google AI Studio or Vertex AI).
+**Important:** To comply with the [Gemini CLI Terms of Use](https://geminicli.com/docs/resources/tos-privacy/#prohibited-use), the sandbox environment **must** use a paid API key (via Google AI Studio or Vertex AI).
 
-The official terms explicitly state that accessing services via the Gemini CLI's default OAuth login using "third-party software, tools, or services" is a violation that may lead to account suspension. Because the Docker sandbox is considered a third-party wrapper, you must use a **Paid API Key** to ensure your usage is governed by the appropriate API Terms of Service (which permit programmatic and containerized access).
+Specifically, see the **"Prohibited Use"** section of the Gemini CLI Terms of Use, which states that you may not use the service with OAuth credentials via **"third-party software, tools, or services"** and warns that violations **"may result in suspension or termination"**. Because the Docker sandbox acts as a third-party wrapper around the Gemini CLI, use a **paid API key** instead so your usage falls under the applicable API Terms of Service for programmatic/containerized access.
 
 ## Agentic Development Workflow
 
 To work on this codebase using AI assistance, you should use the provided Docker sandbox. This keeps your host machine clean while giving the Gemini CLI full access to the project.
 
 1. **Set your API Key** on your host machine:
+
+   You must use a paid API key generated from [Google AI Studio](https://aistudio.google.com/) or [Google Cloud Vertex AI](https://cloud.google.com/vertex-ai).
 
    ```bash
    export GEMINI_API_KEY="your_api_key_here"
