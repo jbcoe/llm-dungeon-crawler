@@ -88,7 +88,7 @@ def test_autocompletion_options(fake_ai: Any) -> None:
         items=[Item(name="Health Potion", description="test")],
     )
     engine.current_room = room
-    engine.player.inventory = [type("MockItem", (), {"name": "Rusty Sword"})()]
+    engine.player.inventory = [Item(name="Rusty Sword", description="An old sword")]
 
     options = engine.get_completion_options()
 
