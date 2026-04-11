@@ -9,6 +9,12 @@ This project uses two different AI systems for distinct purposes:
 1. **Ollama (Local)**: Powers the game's actual runtime (NPC dialogue, room descriptions).
 2. **Gemini (Cloud)**: Powers the **Agentic Development Workflow** via the Gemini CLI to help write code, fix bugs, and refactor.
 
+### Compliance & API Usage
+
+**Important:** To comply with the [Gemini CLI Terms of Use](https://geminicli.com/docs/resources/tos-privacy/), the sandbox environment **must** use a paid API key (via Google AI Studio or Vertex AI).
+
+The official terms explicitly state that accessing services via the Gemini CLI's default OAuth login using "third-party software, tools, or services" is a violation that may lead to account suspension. Because the Docker sandbox is considered a third-party wrapper, you must use a **Paid API Key** to ensure your usage is governed by the appropriate API Terms of Service (which permit programmatic and containerized access).
+
 ## Agentic Development Workflow
 
 To work on this codebase using AI assistance, you should use the provided Docker sandbox. This keeps your host machine clean while giving the Gemini CLI full access to the project.
