@@ -374,3 +374,50 @@ def test_handle_rest_no_room(engine: GameEngine) -> None:
     engine.current_room = None
     # Just calling it to ensure it returns early without error
     engine.handle_rest()
+
+
+def test_handle_map(engine: GameEngine) -> None:
+    """Test that handle_map calls display_map and prints expected ASCII."""
+    with patch("game.engine.GameUI.print") as mock_print:
+        # Mock map state
+        engine.x, engine.y = 1, 1
+        engine.current_room = Room(
+            name="Test Room",
+            description="A test room",
+            exits=["north", "east"],
+        )
+        engine.grid[(1, 1)] = engine.current_room
+
+        engine.handle_map()
+
+        # Check if the title is printed
+        assert_printed(mock_print, "Dungeon Map:")
+
+        # Check for current position marker
+        assert_printed(mock_print, "[bold red]*[/bold red]")
+
+        # Check for unexplored exit marker
+        assert_printed(mock_print, "[white]?[/white]")
+
+
+def test_map_integration(engine: GameEngine) -> None:
+    """Test map updates after moving."""
+    with patch("game.engine.GameUI.print") as mock_print:
+        # Initial map
+        engine.x, engine.y = 1, 1
+        engine.grid[(1, 1)] = Room(name="Start", description="Start", exits=["north"])
+        engine.handle_map()
+        assert_printed(mock_print, "[bold red]*[/bold red]")
+
+        # Mock moving north
+        engine.x, engine.y = 1, 2
+        engine.grid[(1, 2)] = Room(
+            name="North Room", description="North", exits=["south"]
+        )
+
+        mock_print.reset_mock()
+        engine.handle_map()
+
+        # Now (1, 2) should be * and (1, 1) should be o
+        assert_printed(mock_print, "[bold red]*[/bold red]")
+        assert_printed(mock_print, "[bold green]o[/bold green]")
