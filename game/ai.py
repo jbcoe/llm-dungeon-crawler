@@ -238,3 +238,12 @@ class AIGenerator:
         """Generate a haunting introduction for the game session."""
         prompt = load_prompt("intro.md")
         return self._query_model(prompt)
+
+    def narrate_rest(self, player_hp: int, player_max_hp: int) -> str:
+        """Generate narrative text for the player resting."""
+        template = load_prompt("rest.md")
+        prompt = template.format(
+            player_hp=player_hp,
+            player_max_hp=player_max_hp,
+        )
+        return self._query_model(prompt)
