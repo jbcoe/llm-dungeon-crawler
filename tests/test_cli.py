@@ -96,6 +96,28 @@ def test_main(
     mock_manage.assert_called_once_with("gemma4:e4b")
     mock_check_conn.assert_called_once_with("gemma4:e4b")
     mock_engine_cls.assert_called_once_with(
-        max_history=50, model="gemma4:e4b", map_size=8
+        max_history=50, model="gemma4:e4b", map_size=8, max_loading_time=0.0
+    )
+    mock_engine.start.assert_called_once()
+
+
+@patch(
+    "sys.argv",
+    ["dungeon-crawler", "--experimental-max-loading-time", "3.5"],
+)
+@patch("game.cli.AIGenerator.manage_ollama")
+@patch("game.cli.check_ollama_connection")
+@patch("game.cli.GameEngine")
+def test_main_with_loading_time(
+    mock_engine_cls: MagicMock, mock_check_conn: MagicMock, mock_manage: MagicMock
+) -> None:
+    """Ensure --experimental-max-loading-time is passed to the game engine."""
+    mock_engine = mock_engine_cls.return_value
+    mock_manage.return_value.__enter__.return_value = None
+
+    main()
+
+    mock_engine_cls.assert_called_once_with(
+        max_history=1000, model="gemma4:e4b", map_size=8, max_loading_time=3.5
     )
     mock_engine.start.assert_called_once()
