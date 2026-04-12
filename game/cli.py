@@ -113,7 +113,8 @@ def main() -> None:
         help=(
             "URL of a remote Ollama server to connect to instead of a local one "
             "(e.g., http://34.1.2.3:11434). "
-            "Overrides the OLLAMA_HOST environment variable."
+            "Sets the OLLAMA_HOST environment variable, taking precedence over "
+            "any existing value."
         ),
     )
     args = parser.parse_args()
