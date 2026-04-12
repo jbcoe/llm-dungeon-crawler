@@ -150,24 +150,27 @@ def test_check_content_dir_invalid() -> None:
         check_content_dir("/nonexistent/path/that/does/not/exist")
 
 
-@patch("sys.argv", ["dungeon-crawler", "--content-dir", "/tmp"])
 @patch("game.cli.AIGenerator.manage_ollama")
 @patch("game.cli.check_ollama_connection")
 @patch("game.cli.GameEngine")
 def test_main_with_content_dir(
-    mock_engine_cls: MagicMock, mock_check_conn: MagicMock, mock_manage: MagicMock
+    mock_engine_cls: MagicMock,
+    mock_check_conn: MagicMock,
+    mock_manage: MagicMock,
+    tmp_path: Path,
 ) -> None:
     """Ensure --content-dir is parsed and forwarded to the game engine."""
     mock_engine = mock_engine_cls.return_value
     mock_manage.return_value.__enter__.return_value = None
 
-    main()
+    with patch("sys.argv", ["dungeon-crawler", "--content-dir", str(tmp_path)]):
+        main()
 
     mock_engine_cls.assert_called_once_with(
         max_history=1000,
         model="gemma4:e4b",
         map_size=8,
         max_loading_time=0.0,
-        content_dir=Path("/tmp"),
+        content_dir=tmp_path,
     )
     mock_engine.start.assert_called_once()
