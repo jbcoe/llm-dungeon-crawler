@@ -94,12 +94,25 @@ def main() -> None:
         default=8,
         help="The size of the pre-generated dungeon map (default: 8)",
     )
+    parser.add_argument(
+        "--experimental-max-loading-time",
+        type=float,
+        default=0.0,
+        metavar="SECONDS",
+        help=(
+            "Experimental: maximum random loading time in seconds between "
+            "room transitions (default: 0, disabled). Gives the game a retro feel."
+        ),
+    )
     args = parser.parse_args()
 
     with AIGenerator.manage_ollama(args.model):
         check_ollama_connection(args.model)
         engine = GameEngine(
-            max_history=args.history_length, model=args.model, map_size=args.size
+            max_history=args.history_length,
+            model=args.model,
+            map_size=args.size,
+            max_loading_time=args.experimental_max_loading_time,
         )
         engine.start()
 

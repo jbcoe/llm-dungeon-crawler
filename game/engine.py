@@ -1,10 +1,12 @@
 """Core game engine responsible for the game loop and command handling."""
 
 import random
+import time
 
 from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.markup import escape
+from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
 
 from game.ai import AIGenerator
 from game.logger import log_event, setup_logger
@@ -58,6 +60,10 @@ COMMANDS: dict[str, CommandInfo] = {
     "rest": CommandInfo(
         usage="rest",
         desc="Rest awhile to recover HP (enemies may appear)",
+    ),
+    "map": CommandInfo(
+        usage="map",
+        desc="Show a map of explored rooms",
     ),
 }
 
@@ -127,6 +133,62 @@ class GameUI:
         inventory = ", ".join([i.name for i in player.inventory]) or "Empty"
         self.print(f"[bold magenta]Inventory:[/bold magenta] {inventory}")
 
+    def display_map(
+        self,
+        map_grid: Map,
+        current_pos: tuple[int, int],
+        explored: set[tuple[int, int]],
+    ) -> None:
+        """Display an ASCII art map of the dungeon."""
+        self.print("\n[bold yellow]Dungeon Map:[/bold yellow]")
+
+        # Directions: NORTH is (0, 1), so top row is max y
+        for y in range(map_grid.size - 1, -1, -1):
+            row: list[str] = []
+            for x in range(map_grid.size):
+                coord = (x, y)
+                if coord == current_pos:
+                    row.append("[bold red]*[/bold red]")
+                elif coord in explored:
+                    row.append("[bold green]o[/bold green]")
+                elif map_grid.space[x, y]:
+                    # Check if it's an unexplored exit (adjacent to explored)
+                    is_unexplored_exit = False
+                    for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                        if (x + dx, y + dy) in explored:
+                            is_unexplored_exit = True
+                            break
+                    if is_unexplored_exit:
+                        row.append("[white]?[/white]")
+                    else:
+                        row.append(" ")
+                else:
+                    row.append(" ")
+            self.print(" ".join(row))
+
+    def show_loading_bar(self, duration: float) -> None:
+        """
+        Display a retro loading bar for the given duration in seconds.
+
+        Shows a yellow "Loading..." label alongside a filling progress bar.
+        Durations <= 0 are treated as no-ops and return immediately.
+        """
+        if duration <= 0:
+            return
+        steps = 40
+        interval = duration / steps
+        with Progress(
+            TextColumn("[bold yellow]Loading...[/bold yellow]"),
+            BarColumn(bar_width=None),
+            TimeRemainingColumn(),
+            console=self.console,
+            transient=True,
+        ) as progress:
+            task = progress.add_task("loading", total=steps)
+            for _ in range(steps):
+                time.sleep(interval)
+                progress.advance(task)
+
 
 class GameEngine:
     """Main game engine class managing state and logic."""
@@ -139,8 +201,15 @@ class GameEngine:
         ai_generator: AIGenerator | None = None,
         map_size: int = 8,
         map_seed: int | None = None,
+        max_loading_time: float = 0.0,
     ) -> None:
-        """Initialize the game engine."""
+        """
+        Initialize the game engine.
+
+        The ``max_loading_time`` parameter controls the maximum random loading
+        duration (in seconds) shown between room transitions.  When set to 0
+        (the default) no loading screen is displayed.
+        """
         self.player = Player()
         self.ai = ai_generator or AIGenerator(model=model)
         self.model = self.ai.model
@@ -156,6 +225,7 @@ class GameEngine:
         self.grid: dict[tuple[int, int], Room] = {}
         self.ui = GameUI()
         self.rest_count = 0
+        self.max_loading_time = max_loading_time
         self.setup_readline()
 
     def setup_readline(self) -> None:
@@ -254,6 +324,10 @@ class GameEngine:
         if direction != "start":
             self.ui.print_italic(f"You travel {direction}...")
 
+        if self.max_loading_time > 0:
+            loading_duration = random.uniform(0, self.max_loading_time)
+            self.ui.show_loading_bar(loading_duration)
+
         if coord in self.grid:
             self.ui.print_italic("You've been here before.")
             self.current_room = self.grid[coord]
@@ -306,6 +380,8 @@ class GameEngine:
             elif action == "look":
                 if self.current_room:
                     self.ui.display_room(self.current_room)
+            elif action == "map":
+                self.handle_map()
             elif action in ["status", "inventory", "i", "stats", "me"]:
                 self.ui.display_status(self.player)
             elif action == "go":
@@ -336,6 +412,10 @@ class GameEngine:
         self.ui.print("\n[bold]Available Commands:[/bold]")
         for info in COMMANDS.values():
             self.ui.print(f"  {info.usage.ljust(15)} - {info.desc}")
+
+    def handle_map(self) -> None:
+        """Handle the map command."""
+        self.ui.display_map(self.map_grid, (self.x, self.y), set(self.grid.keys()))
 
     def handle_go(self, parts: list[str]) -> None:
         """Handle the go command."""
