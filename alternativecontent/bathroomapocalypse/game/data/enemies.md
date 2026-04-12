@@ -1,0 +1,26 @@
+# Enemy Types
+
+- Escherichia coli:A gut-dwelling bacterium famous for being helpful in digestion and infamous when it ends up in the wrong place.
+- Staphylococcus aureus:A golden-hued bacterium that lounges on skin and waits for cuts to crash the party.
+- Lactobacillus acidophilus:A friendly fermenter that turns milk into yogurt and keeps harsher microbes in check.
+- Salmonella enterica:A resilient bacterium that survives harsh conditions and causes chaos when ingested.
+- Clostridium difficile:A spore-forming menace that thrives when antibiotics knock out its competition.
+- Pseudomonas aeruginosa:A slick, adaptable bacterium that loves damp surfaces and cleaning neglect.
+- Bacillus subtilis:A tough soil bacterium that can hibernate for years as a spore.
+- Enterococcus faecalis:A hardy gut resident that refuses to leave even in hostile environments.
+- Campylobacter jejuni:A spiral-shaped traveler that causes intestinal distress with alarming efficiency.
+- Helicobacter pylori:A corkscrew bacterium that drills into stomach lining and makes ulcers its home.
+- Giardia lamblia:A flagellated protozoan that turns clean water into a stomach-flipping surprise.
+- Entamoeba histolytica:A shapeshifting amoeba capable of dissolving intestinal walls.
+- Trypanosoma cruzi:A bloodborne protozoan with a talent for sneaky long-term infections.
+- Plasmodium falciparum:A malaria parasite that hijacks red blood cells for a deadly ride.
+- Paramecium caudatum:A slipper-shaped protozoan zipping through water using thousands of tiny cilia.
+- Amoeba proteus:A blob-like predator that engulfs food by changing shape at will.
+- Euglena gracilis:A photosynthetic opportunist that can switch between plant and animal lifestyles.
+- Naegleria fowleri:A heat-loving amoeba known for its extremely unwelcome trips up the nose.
+- Candida albicans:A yeast that quietly coexists until it decides to overgrow and cause trouble.
+- Saccharomyces cerevisiae:A hardworking yeast responsible for bread, beer, and mild bathroom smells.
+- Methanobrevibacter smithii:A gas-producing archaeon that contributes to internal pressure buildup.
+- Vorticella campanula:A bell-shaped protozoan that snaps shut when disturbed.
+- Leishmania donovani:A parasitic protozoan that travels via insects and causes systemic illness.
+- Acinetobacter baumannii:A stubborn bacterium known for surviving disinfectants and hospital warfare.

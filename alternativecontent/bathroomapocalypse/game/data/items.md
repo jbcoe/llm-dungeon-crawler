@@ -1,0 +1,50 @@
+# Item Types
+
+- Cracked Toilet:A porcelain throne chipped by time and questionable decisions.
+- Rusty Tap:A dripping faucet that stains everything it touches with orange regret.
+- Soggy Toilet Roll:Once useful, now a damp cylinder of poor planning.
+- Mildewed Shower Curtain:A plastic veil speckled with creeping black constellations.
+- Stained Bath Mat:A squishy floor sponge that remembers every footstep.
+- Fogged Mirror:A glass surface permanently smeared with steam and fingerprints.
+- Warped Sink Plug:A rubber disk that never quite seals the truth away.
+- Blocked Drain:A gurgling hole that swallows hair and dreams alike.
+- Grimy Tile Grout:A network of narrowing lines packed with ancient dirt.
+- Bent Toilet Brush:A tool that has seen too much to ever be clean again.
+- Empty Soap Bottle:A hollow shell promising hygiene while delivering nothing.
+- Scuffed Toilet Seat:Scraped and loose, it wobbles with judgment.
+- Leaking Pipe:A hidden drip quietly ruining everything beneath it.
+- Crusty Sink Overflow:A mysterious hole rimmed with unidentifiable residue.
+- Faded Shampoo Bottle:A once-vibrant container clinging to its last drops.
+- Peeling Bathroom Paint:Sheets of damp color surrendering to steam.
+- Foggy Shower Door:A cloudy barrier etched with years of water spots.
+- Hair-Clogged Plughole:A tangled nest slowly plotting its revenge.
+- Loose Towel Hook:A metal nub that never holds when needed.
+- Cracked Soap Dish:A ceramic tray collecting slimy remains.
+- Yellowed Light Switch:A plastic square grimy from careless hands.
+- Damp Toilet Tank:A condensation-slick box buzzing faintly.
+- Bent Razor Handle:A dulled tool abandoned mid-shave.
+- Scratched Sink Basin:A porcelain bowl etched with wear and toothpaste scars.
+- Greasy Vent Cover:A ceiling grate coughing out warm, tired air.
+- Sour Mop Bucket:A cleaning tool that smells worse than the mess.
+- Sticky Floor Tile:A step that never fully lets go.
+- Collapsed Shower Shelf:A plastic ledge defeated by gravity and soap bottles.
+- Dripping Shower Head:A metal ring that ticks like a damp clock.
+- Crusty Drain Cover:A metal disk fused with minerals and hair.
+- Lost TV Remote:A dust-covered control marooned far from its sofa.
+- Damp Paperback Book:A swollen novel absorbing bathroom humidity.
+- Stray Coffee Mug:A chipped cup holding toothbrushes instead of hope.
+- Sock of Mystery:A lone fabric foot relic soaked and unclaimed.
+- Kitchen Scissors:A practical tool now somehow rusting by the sink.
+- Laundry Peg:A tiny clip clinging to damp towels.
+- Houseplant of Regret:A wilted green thing regretting its relocation.
+- Frozen Air Freshener:A scent device long past its perfume prime.
+- Bent Coat Hanger:A wire frame awkwardly holding towels.
+- Plastic Storage Lid:A warped disc with no matching container.
+- Dusty Alarm Clock:A blinking timekeeper watching steamy minutes pass.
+- Cracked Bucket Handle:A plastic grip that snaps when trusted.
+- Old Mobile Charger:A frayed cable living dangerously close to water.
+- Spare Table Leg:A wooden limb leaning uselessly against the wall.
+- Forgotten Shoe:A lone trainer absorbing moisture and shame.
+- Dusty Picture Frame:A crooked photo watching everything silently.
+- Mismatched Slipper:A single foot-cover slowly going mouldy.
+- Abandoned Toolbox:A metal box sweating lightly in the corner.
