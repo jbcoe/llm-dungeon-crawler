@@ -2,6 +2,7 @@
 
 import random
 import time
+from pathlib import Path
 
 from pydantic import BaseModel, Field
 from rich.console import Console
@@ -202,6 +203,7 @@ class GameEngine:
         map_size: int = 8,
         map_seed: int | None = None,
         max_loading_time: float = 0.0,
+        content_dir: Path | None = None,
     ) -> None:
         """
         Initialize the game engine.
@@ -209,9 +211,14 @@ class GameEngine:
         The ``max_loading_time`` parameter controls the maximum random loading
         duration (in seconds) shown between room transitions.  When set to 0
         (the default) no loading screen is displayed.
+
+        The ``content_dir`` parameter points to an optional directory
+        containing alternative ``.md`` data and prompt files that replace the
+        built-in thematic content.  Files absent from the directory fall back
+        to the built-in equivalents.
         """
         self.player = Player()
-        self.ai = ai_generator or AIGenerator(model=model)
+        self.ai = ai_generator or AIGenerator(model=model, content_dir=content_dir)
         self.model = self.ai.model
         self.floor = 1
         self.current_room: Room | None = None

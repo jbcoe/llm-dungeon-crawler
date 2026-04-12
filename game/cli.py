@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from pathlib import Path
 
 import ollama
 from rich.console import Console
@@ -73,6 +74,14 @@ def check_map_size(value: str) -> int:
     return ivalue
 
 
+def check_content_dir(value: str) -> Path:
+    """Validate that the content directory exists."""
+    path = Path(value)
+    if not path.is_dir():
+        raise argparse.ArgumentTypeError(f"'{value}' is not an existing directory")
+    return path
+
+
 def main() -> None:
     """Parse arguments and start the game engine."""
     parser = argparse.ArgumentParser(description="LLM Dungeon Crawler")
@@ -104,6 +113,17 @@ def main() -> None:
             "room transitions (default: 0, disabled). Gives the game a retro feel."
         ),
     )
+    parser.add_argument(
+        "--content-dir",
+        type=check_content_dir,
+        default=None,
+        metavar="DIR",
+        help=(
+            "Path to a directory containing alternative theme files "
+            "(enemies.md, items.md, npcs.md, rooms.md and prompts/*.md). "
+            "Files absent from the directory fall back to built-in content."
+        ),
+    )
     args = parser.parse_args()
 
     with AIGenerator.manage_ollama(args.model):
@@ -113,6 +133,7 @@ def main() -> None:
             model=args.model,
             map_size=args.size,
             max_loading_time=args.experimental_max_loading_time,
+            content_dir=args.content_dir,
         )
         engine.start()
 

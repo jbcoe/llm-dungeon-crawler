@@ -9,6 +9,7 @@ import time
 import urllib.parse
 from contextlib import contextmanager
 from functools import lru_cache
+from pathlib import Path
 from typing import Any, Generator
 
 import ollama
@@ -22,8 +23,23 @@ logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=None)
-def load_prompt(filename: str) -> str:
-    """Load a prompt template from a markdown file in the data directory."""
+def load_prompt(filename: str, content_dir: Path | None = None) -> str:
+    """
+    Load a prompt template from a markdown file in the data directory.
+
+    If *content_dir* is supplied the file is looked up in
+    ``<content_dir>/prompts/<filename>`` first; missing files fall back to
+    the built-in ``game/data/prompts`` package data.
+    """
+    if content_dir is not None:
+        candidate = content_dir / "prompts" / filename
+        if candidate.is_file():
+            return candidate.read_text(encoding="utf-8")
+        logger.debug(
+            f"'{filename}' not found in content dir '{content_dir}/prompts'; "
+            "falling back to built-in prompt."
+        )
+
     filepath = importlib.resources.files("game.data.prompts").joinpath(filename)
     if not filepath.is_file():
         raise FileNotFoundError(f"Missing expected prompt file: {filename}")
@@ -33,9 +49,12 @@ def load_prompt(filename: str) -> str:
 class AIGenerator:
     """Handles all LLM generation logic using a specific model."""
 
-    def __init__(self, model: str = "gemma4:e4b") -> None:
-        """Initialize the AI generator with a specific model."""
+    def __init__(
+        self, model: str = "gemma4:e4b", content_dir: Path | None = None
+    ) -> None:
+        """Initialize with a specific model and optional content directory."""
         self.model = model
+        self.content_dir = content_dir
 
     @staticmethod
     @contextmanager
@@ -151,7 +170,7 @@ class AIGenerator:
         exits: list[str] | None = None,
     ) -> dict[str, Any]:
         """Generate a room description using AI based on current mechanics."""
-        mechanics = generate_mechanics(floor, exits=exits)
+        mechanics = generate_mechanics(floor, exits=exits, content_dir=self.content_dir)
 
         # Format lists for the prompt
         room_type_name = mechanics["room_type"]["name"]
@@ -173,7 +192,7 @@ class AIGenerator:
             else "None"
         )
 
-        template = load_prompt("room.md")
+        template = load_prompt("room.md", self.content_dir)
         prompt = template.format(
             previous_context=previous_context,
             room_type_name=room_type_name,
@@ -194,7 +213,7 @@ class AIGenerator:
         self, item_name: str, item_description: str, room_context: str
     ) -> str:
         """Generate narrative text for using an item."""
-        template = load_prompt("item_use.md")
+        template = load_prompt("item_use.md", self.content_dir)
         prompt = template.format(
             item_name=item_name,
             item_description=item_description,
@@ -206,7 +225,7 @@ class AIGenerator:
         self, npc_name: str, npc_context: str, player_message: str, history: str = ""
     ) -> str:
         """Generate a dialogue response from an NPC."""
-        template = load_prompt("npc.md")
+        template = load_prompt("npc.md", self.content_dir)
         prompt = template.format(
             npc_name=npc_name,
             npc_context=npc_context,
@@ -224,7 +243,7 @@ class AIGenerator:
         damage_dealt: int,
     ) -> str:
         """Generate visceral narration for a combat exchange."""
-        template = load_prompt("combat.md")
+        template = load_prompt("combat.md", self.content_dir)
         prompt = template.format(
             player_action=player_action,
             enemy_name=enemy_name,
@@ -236,12 +255,12 @@ class AIGenerator:
 
     def generate_intro(self) -> str:
         """Generate a haunting introduction for the game session."""
-        prompt = load_prompt("intro.md")
+        prompt = load_prompt("intro.md", self.content_dir)
         return self._query_model(prompt)
 
     def narrate_rest(self, player_hp: int, player_max_hp: int) -> str:
         """Generate narrative text for the player resting."""
-        template = load_prompt("rest.md")
+        template = load_prompt("rest.md", self.content_dir)
         prompt = template.format(
             player_hp=player_hp,
             player_max_hp=player_max_hp,

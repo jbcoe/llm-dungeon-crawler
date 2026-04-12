@@ -4,21 +4,40 @@ import importlib.resources
 import logging
 import random
 import re
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def load_data(filename: str) -> list[dict[str, str]]:
-    """Load game data from a markdown file with robust parsing."""
+def load_data(filename: str, content_dir: Path | None = None) -> list[dict[str, str]]:
+    """
+    Load game data from a markdown file with robust parsing.
+
+    If *content_dir* is supplied the file is looked up there first; missing
+    files fall back to the built-in ``game/data`` package data.
+    """
     items: list[dict[str, str]] = []
     try:
-        filepath = importlib.resources.files("game.data").joinpath(filename)
-        if not filepath.is_file():
-            logger.error(f"Missing expected data file: {filename}")
-            return []
+        content: str | None = None
 
-        content = filepath.read_text(encoding="utf-8")
+        if content_dir is not None:
+            candidate = content_dir / filename
+            if candidate.is_file():
+                content = candidate.read_text(encoding="utf-8")
+            else:
+                logger.debug(
+                    f"'{filename}' not found in content dir '{content_dir}'; "
+                    "falling back to built-in data."
+                )
+
+        if content is None:
+            filepath = importlib.resources.files("game.data").joinpath(filename)
+            if not filepath.is_file():
+                logger.error(f"Missing expected data file: {filename}")
+                return []
+            content = filepath.read_text(encoding="utf-8")
+
         # Match lines starting with optional space, then - or *, then name : description
         pattern = re.compile(r"^\s*[-*]\s*([^:]+):\s*(.*)$", re.MULTILINE)
         matches = pattern.findall(content)
@@ -74,16 +93,28 @@ def _get_item_mechanics(item_data: dict[str, str], floor: int) -> dict[str, Any]
 def generate_mechanics(
     floor: int,
     exits: list[str] | None = None,
+    content_dir: Path | None = None,
 ) -> dict[str, Any]:
-    """Generate the mechanical components of a room based on the current floor."""
+    """
+    Generate the mechanical components of a room based on the current floor.
+
+    When *content_dir* is supplied the data files (``enemies.md`` etc.) are
+    loaded from that directory, falling back to the built-in package data when
+    a file is absent.
+    """
     if not exits:
         exits_pool = ["north", "south", "east", "west"]
         num_exits = random.randint(1, 4)
         exits = random.sample(exits_pool, num_exits)
 
+    enemies = load_data("enemies.md", content_dir) if content_dir else ENEMIES
+    items = load_data("items.md", content_dir) if content_dir else ITEMS
+    npcs = load_data("npcs.md", content_dir) if content_dir else NPCS
+    rooms = load_data("rooms.md", content_dir) if content_dir else ROOMS
+
     room_type = (
-        random.choice(ROOMS)
-        if ROOMS
+        random.choice(rooms)
+        if rooms
         else {"name": "Generic Room", "description": "A cold stone room."}
     )
 
@@ -95,8 +126,8 @@ def generate_mechanics(
     enemy_chance = 0.3 + (floor * 0.05)  # Difficulty increases with floors
     enemy_chance = min(enemy_chance, 0.7)
 
-    if ENEMIES and random.random() < enemy_chance:
-        enemy_data = random.choice(ENEMIES)
+    if enemies and random.random() < enemy_chance:
+        enemy_data = random.choice(enemies)
         hp = 10 + floor * 5
         attack = 3 + floor * 2
         room_enemies.append(
@@ -110,8 +141,8 @@ def generate_mechanics(
         )
 
     # NPCs appear if there are no enemies (usually)
-    if NPCS and not room_enemies and random.random() < 0.2:
-        npc_data = random.choice(NPCS)
+    if npcs and not room_enemies and random.random() < 0.2:
+        npc_data = random.choice(npcs)
         room_npcs.append(
             {
                 "name": npc_data["name"],
@@ -122,8 +153,8 @@ def generate_mechanics(
 
     # Items can appear anywhere
     item_chance = 0.4
-    if ITEMS and random.random() < item_chance:
-        item_data = random.choice(ITEMS)
+    if items and random.random() < item_chance:
+        item_data = random.choice(items)
         room_items.append(_get_item_mechanics(item_data, floor))
 
     return {

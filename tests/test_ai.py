@@ -1,5 +1,6 @@
 """Unit tests for ai.py."""
 
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -218,3 +219,58 @@ def test_generate_intro_real_prompt(mock_chat: MagicMock) -> None:
     prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
     expected_prompt = load_prompt("intro.md")
     assert prompt_sent == expected_prompt
+
+
+def test_load_prompt_with_content_dir(tmp_path: Path) -> None:
+    """Verify load_prompt reads from content_dir/prompts/ when the file exists there."""
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    custom_prompt = "You are in a sci-fi universe."
+    (prompts_dir / "intro.md").write_text(custom_prompt)
+
+    # Clear the lru_cache so our tmp_path entry is freshly resolved
+    load_prompt.cache_clear()
+    try:
+        result = load_prompt("intro.md", content_dir=tmp_path)
+        assert result == custom_prompt
+    finally:
+        load_prompt.cache_clear()
+
+
+def test_load_prompt_content_dir_fallback(tmp_path: Path) -> None:
+    """Verify load_prompt falls back to built-in when file is absent in content_dir."""
+    # tmp_path/prompts does not contain intro.md
+    (tmp_path / "prompts").mkdir()
+
+    load_prompt.cache_clear()
+    try:
+        result = load_prompt("intro.md", content_dir=tmp_path)
+        # Built-in intro.md must be non-empty
+        assert len(result) > 0
+    finally:
+        load_prompt.cache_clear()
+
+
+@patch("game.ai.generate_mechanics")
+@patch("game.ai.chat")
+def test_ai_generator_with_content_dir(
+    mock_chat: MagicMock,
+    mock_gen_mechanics: MagicMock,
+    tmp_path: Path,
+) -> None:
+    """Verify AIGenerator uses prompts from content_dir when provided."""
+    prompts_dir = tmp_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "intro.md").write_text("Sci-fi intro prompt")
+
+    mock_chat.return_value = MagicMock(message=MagicMock(content="Sci-fi world!"))
+
+    load_prompt.cache_clear()
+    try:
+        ai = AIGenerator(content_dir=tmp_path)
+        result = ai.generate_intro()
+        assert result == "Sci-fi world!"
+        prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+        assert prompt_sent == "Sci-fi intro prompt"
+    finally:
+        load_prompt.cache_clear()
