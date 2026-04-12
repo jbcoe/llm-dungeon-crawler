@@ -11,7 +11,7 @@ Location Elements (DO NOT invent extra enemies, items, or NPCs not listed here):
 - Contacts present: {npcs_str}
 - Equipment found here: {items_str}
 
-Write a tense, 3-4 sentence atmospheric description of the location itself.
+Write a tense, 1-2 sentence atmospheric description of the location itself.
 Focus on lighting (emergency red, flickering panels), sound (alarms, hull groans,
 distant movement), smell, and the sense of danger or isolation.
 Incorporate any hostiles, contacts, or equipment seamlessly into the description.
