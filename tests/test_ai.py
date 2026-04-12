@@ -1,5 +1,6 @@
 """Unit tests for ai.py."""
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -229,7 +230,7 @@ def test_generate_final_room(
     mock_gen_final: MagicMock,
 ) -> None:
     """Verify final room mechanics are injected into the final_room prompt correctly."""
-    mock_gen_final.return_value = {
+    mechanics: dict[str, Any] = {
         "room_type": {"name": "Throne of Bones", "description": "A hall of skulls"},
         "exits": ["south"],
         "enemies": [
@@ -239,10 +240,11 @@ def test_generate_final_room(
                 "is_boss": True,
             }
         ],
-        "npcs": list[dict[str, str]](),
+        "npcs": list[Any](),
         "items": [{"name": "Magic Sword", "description": "Glows blue"}],
         "is_final_room": True,
     }
+    mock_gen_final.return_value = mechanics
     mock_load_prompt.return_value = (
         "BOSS: {boss_name} | DESC: {boss_description} | ROOM: {room_type_name} | "
         "RDESC: {room_type_desc} | ITEMS: {items_str} | CTX: {previous_context}"
@@ -270,7 +272,7 @@ def test_generate_final_room_real_prompt(
     mock_gen_final: MagicMock,
 ) -> None:
     """Verify boss details are injected into the real final_room prompt."""
-    mock_gen_final.return_value = {
+    mechanics: dict[str, Any] = {
         "room_type": {
             "name": "Sanctum of the Abyss",
             "description": "A void-ringed chamber",
@@ -283,10 +285,11 @@ def test_generate_final_room_real_prompt(
                 "is_boss": True,
             }
         ],
-        "npcs": list[dict[str, str]](),
-        "items": list[dict[str, str]](),
+        "npcs": list[Any](),
+        "items": list[Any](),
         "is_final_room": True,
     }
+    mock_gen_final.return_value = mechanics
     mock_chat.return_value = MagicMock(message=MagicMock(content="Darkness descends."))
 
     AIGenerator().generate_final_room(floor=3, previous_context="Test Journey")

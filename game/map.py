@@ -1,6 +1,7 @@
 """Procedural map generation for the dungeon layout."""
 
 import random
+from collections import deque
 from enum import Enum
 
 import numpy as np
@@ -169,9 +170,9 @@ class Map:
 
         # BFS from start to compute distances across all reachable path cells
         distances: dict[Coordinate, int] = {start: 0}
-        queue: list[Coordinate] = [start]
+        queue: deque[Coordinate] = deque([start])
         while queue:
-            current = queue.pop(0)
+            current = queue.popleft()
             for direction in Direction:
                 neighbour = current.step(direction)
                 if (
