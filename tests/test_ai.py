@@ -218,3 +218,86 @@ def test_generate_intro_real_prompt(mock_chat: MagicMock) -> None:
     prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
     expected_prompt = load_prompt("intro.md")
     assert prompt_sent == expected_prompt
+
+
+@patch("game.ai.generate_final_room_mechanics")
+@patch("game.ai.chat")
+@patch("game.ai.load_prompt")
+def test_generate_final_room(
+    mock_load_prompt: MagicMock,
+    mock_chat: MagicMock,
+    mock_gen_final: MagicMock,
+) -> None:
+    """Verify final room mechanics are injected into the final_room prompt correctly."""
+    mock_gen_final.return_value = {
+        "room_type": {"name": "Throne of Bones", "description": "A hall of skulls"},
+        "exits": ["south"],
+        "enemies": [
+            {
+                "name": "The Lich King",
+                "description": "Undead sorcerer",
+                "is_boss": True,
+            }
+        ],
+        "npcs": list[dict[str, str]](),
+        "items": [{"name": "Magic Sword", "description": "Glows blue"}],
+        "is_final_room": True,
+    }
+    mock_load_prompt.return_value = (
+        "BOSS: {boss_name} | DESC: {boss_description} | ROOM: {room_type_name} | "
+        "RDESC: {room_type_desc} | ITEMS: {items_str} | CTX: {previous_context}"
+    )
+    mock_chat.return_value = MagicMock(message=MagicMock(content="Final Room Desc"))
+
+    result = AIGenerator().generate_final_room(
+        floor=5, previous_context="Long journey", exits=["south"]
+    )
+
+    assert result["description"] == "Final Room Desc"
+    assert result["is_final_room"] is True
+    assert result["name"] == "Throne of Bones"
+
+    prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+    assert "The Lich King" in prompt_sent
+    assert "Long journey" in prompt_sent
+    assert "Magic Sword" in prompt_sent
+
+
+@patch("game.ai.generate_final_room_mechanics")
+@patch("game.ai.chat")
+def test_generate_final_room_real_prompt(
+    mock_chat: MagicMock,
+    mock_gen_final: MagicMock,
+) -> None:
+    """Verify boss details are injected into the real final_room prompt."""
+    mock_gen_final.return_value = {
+        "room_type": {
+            "name": "Sanctum of the Abyss",
+            "description": "A void-ringed chamber",
+        },
+        "exits": ["north"],
+        "enemies": [
+            {
+                "name": "Shadow Empress",
+                "description": "A dark fey queen",
+                "is_boss": True,
+            }
+        ],
+        "npcs": list[dict[str, str]](),
+        "items": list[dict[str, str]](),
+        "is_final_room": True,
+    }
+    mock_chat.return_value = MagicMock(message=MagicMock(content="Darkness descends."))
+
+    AIGenerator().generate_final_room(floor=3, previous_context="Test Journey")
+
+    prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+    expected_prompt = load_prompt("final_room.md").format(
+        previous_context="Test Journey",
+        room_type_name="Sanctum of the Abyss",
+        room_type_desc="A void-ringed chamber",
+        boss_name="Shadow Empress",
+        boss_description="A dark fey queen",
+        items_str="None",
+    )
+    assert prompt_sent == expected_prompt

@@ -141,3 +141,50 @@ class Map:
             if 0 <= nx < self.size and 0 <= ny < self.size and self.space[nx, ny]:
                 exits.append(direction.name.lower())
         return exits
+
+    def find_dead_ends(self) -> list[Coordinate]:
+        """Return all path cells that have exactly one neighbouring path cell."""
+        dead_ends: list[Coordinate] = []
+        for x in range(self.size):
+            for y in range(self.size):
+                if self.space[x, y] and len(self.get_exits(x, y)) == 1:
+                    dead_ends.append(Coordinate(x, y))
+        return dead_ends
+
+    def get_final_room_coord(
+        self, start: Coordinate | None = None
+    ) -> Coordinate | None:
+        """
+        Return the dead-end cell furthest from *start* via BFS.
+
+        The starting cell itself is excluded so the player always begins in a
+        normal room.  Returns ``None`` when no suitable dead-end exists.
+        """
+        if start is None:
+            start = Coordinate(1, 1)
+
+        dead_ends = [d for d in self.find_dead_ends() if d != start]
+        if not dead_ends:
+            return None
+
+        # BFS from start to compute distances across all reachable path cells
+        distances: dict[Coordinate, int] = {start: 0}
+        queue: list[Coordinate] = [start]
+        while queue:
+            current = queue.pop(0)
+            for direction in Direction:
+                neighbour = current.step(direction)
+                if (
+                    0 <= neighbour.x < self.size
+                    and 0 <= neighbour.y < self.size
+                    and self.space[neighbour.x, neighbour.y]
+                    and neighbour not in distances
+                ):
+                    distances[neighbour] = distances[current] + 1
+                    queue.append(neighbour)
+
+        reachable_dead_ends = [d for d in dead_ends if d in distances]
+        if not reachable_dead_ends:
+            return None
+
+        return max(reachable_dead_ends, key=lambda c: distances[c])
