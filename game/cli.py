@@ -1,6 +1,7 @@
 """Command line interface and entry point logic."""
 
 import argparse
+import os
 import sys
 
 import ollama
@@ -104,7 +105,21 @@ def main() -> None:
             "room transitions (default: 0, disabled). Gives the game a retro feel."
         ),
     )
+    parser.add_argument(
+        "--ollama-url",
+        type=str,
+        default=None,
+        metavar="URL",
+        help=(
+            "URL of a remote Ollama server to connect to instead of a local one "
+            "(e.g., http://34.1.2.3:11434). "
+            "Overrides the OLLAMA_HOST environment variable."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.ollama_url:
+        os.environ["OLLAMA_HOST"] = args.ollama_url
 
     with AIGenerator.manage_ollama(args.model):
         check_ollama_connection(args.model)
