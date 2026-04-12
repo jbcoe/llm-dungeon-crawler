@@ -349,7 +349,7 @@ class GameEngine:
                 self.current_room = Room(
                     name="Stone Chamber",
                     description="A non-descript stone chamber.",
-                    exits=map_exits or ["north"],
+                    exits=map_exits,
                 )
                 self.grid[coord] = self.current_room
 
