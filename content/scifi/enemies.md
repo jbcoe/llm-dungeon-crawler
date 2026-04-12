@@ -1,0 +1,22 @@
+# Enemy Types
+
+- Assault Drone: A compact hovering unit bristling with energy cannons, programmed to eliminate all non-authorized biological targets.
+- Rogue Android: A decommissioned service robot whose ethics subroutines have been corrupted, making it unpredictably violent.
+- Space Pirate: A battle-scarred raider in mismatched salvaged armor, wielding a plasma cutter modified for combat.
+- Mutant Scavenger: A humanoid warped by prolonged exposure to reactor radiation, possessing unnatural strength and little sanity.
+- Security Spider: An eight-legged mechanical crawler deployed by station security, capable of climbing any surface.
+- Nano-Swarm: A cloud of microscopic robots that acts as a single entity, dissolving organic matter on contact.
+- Corporate Enforcer: A heavily augmented mercenary in power armor, loyal only to the company's profit margin.
+- Alien Hive-Guard: A chitinous creature from deep space that secretes acid and defends its hive with frenzied aggression.
+- Infected Colonist: A former crew member overtaken by a parasitic organism, acting as a host for spore dispersal.
+- Gravity Anomaly: A region of inverted spacetime that hurls debris at lethal velocity, seemingly alive and malevolent.
+- EMP Wraith: An entity of pure electromagnetic interference that shorts out electronics and scrambles neural implants.
+- Plasma Turret (Active): A wall-mounted auto-targeting weapon still receiving orders from a destroyed command core.
+- Stealth Infiltrator: An alien predator whose chameleonic skin renders it almost invisible against any background.
+- Xenomorph Scout: A fast-moving extraterrestrial predator that moves on all fours and strikes from the ceiling.
+- Combat Mech (Damaged): A bipedal war machine with a cracked chassis, executing its last combat directive on repeat.
+- Void Leech: A gelatinous organism from the vacuum of space that latches onto hulls and drains power cells.
+- Telepathic Hivemind Fragment: A psychic tendril of a vast alien consciousness, capable of inducing hallucinations.
+- Radiation Ghoul: A heavily irradiated survivor of a reactor meltdown, whose touch causes acute radiation poisoning.
+- Cyborg Bounty Hunter: A human-machine hybrid pursuing a contract, armed with multi-spectrum targeting systems.
+- Rogue Medical Unit: A hospital bot reprogrammed by a virus, its surgical tools now used as weapons.

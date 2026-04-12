@@ -174,3 +174,45 @@ def test_main_with_content_dir(
         content_dir=tmp_path,
     )
     mock_engine.start.assert_called_once()
+
+
+@patch("game.cli.AIGenerator.manage_ollama")
+@patch("game.cli.check_ollama_connection")
+@patch("game.cli.GameEngine")
+def test_main_with_content_dir_validation_error(
+    mock_engine_cls: MagicMock,
+    mock_check_conn: MagicMock,
+    mock_manage: MagicMock,
+    tmp_path: Path,
+) -> None:
+    """Ensure a content-dir with invalid files causes exit before the engine starts."""
+    # Write a data file with no valid entries to trigger validation failure
+    (tmp_path / "enemies.md").write_text("this line has no colon format at all\n")
+
+    with patch("sys.argv", ["dungeon-crawler", "--content-dir", str(tmp_path)]):
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+    assert exc_info.value.code == 1
+    mock_engine_cls.assert_not_called()
+
+
+@patch("game.cli.AIGenerator.manage_ollama")
+@patch("game.cli.check_ollama_connection")
+@patch("game.cli.GameEngine")
+def test_main_with_content_dir_valid_passes(
+    mock_engine_cls: MagicMock,
+    mock_check_conn: MagicMock,
+    mock_manage: MagicMock,
+    tmp_path: Path,
+) -> None:
+    """A valid content-dir passes validation and the engine is started normally."""
+    (tmp_path / "enemies.md").write_text("- Robot: Beeps\n")
+    mock_engine = mock_engine_cls.return_value
+    mock_manage.return_value.__enter__.return_value = None
+
+    with patch("sys.argv", ["dungeon-crawler", "--content-dir", str(tmp_path)]):
+        main()
+
+    mock_engine_cls.assert_called_once()
+    mock_engine.start.assert_called_once()

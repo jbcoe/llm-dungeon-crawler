@@ -1,0 +1,26 @@
+# Item Types
+
+- Medpatch: A single-use adhesive biosynthetic patch that rapidly seals wounds and floods the bloodstream with clotting agents.
+- Plasma Pistol: A sidearm that fires bolts of superheated ionized gas. Its power cell is half-drained.
+- Energy Cell: A standardized rectangular battery block glowing a faint blue. Compatible with most equipment.
+- Stim Injector: An auto-syringe loaded with combat stimulants that sharpen reflexes and suppress pain.
+- Hacking Tool: A slim datapad loaded with intrusion software capable of bypassing basic security locks.
+- Emergency Ration Pack: A vacuum-sealed block of nutrient paste. Tasteless, but it will keep you alive.
+- Grav-Grenade: A small sphere that generates a localized gravity well on impact, crushing anything nearby.
+- Portable Shield Emitter: A wrist-mounted device that projects a brief energy barrier capable of absorbing one burst.
+- Neural Scrambler: A short-range device that disrupts the cognition of biological targets for several seconds.
+- Cryo-Canister: A pressurized flask of liquid nitrogen, useful as a weapon or for cooling overheating systems.
+- Rebreather Mask: A compact oxygen recycler that allows survival in vacuum or toxic atmospheres for thirty minutes.
+- Monofilament Wire: A near-invisible cutting line strong enough to slice through most metals and polymers.
+- Ion Blade: A short blade whose edge is sheathed in a contained ion field, cutting through armor with ease.
+- Targeting Scope: A clip-on optical device that interfaces with most ranged weapons to improve accuracy.
+- Decoy Beacon: A small transmitter that mimics a human biosignature, drawing automated threats away.
+- Antidote Capsule: A universal broad-spectrum capsule that counteracts most known alien toxins and pathogens.
+- Omni-Tool: A multipurpose device combining a welding torch, a scanner, and basic fabrication capabilities.
+- Power Armor Gauntlet: A single powered glove that amplifies grip strength to superhuman levels.
+- Phase Rifle: A long-barreled weapon that fires a beam capable of passing through one layer of solid matter.
+- Nanite Repair Kit: A vial of construction nanobots that rebuild damaged equipment or close minor wounds.
+- Void Cloak: A personal cloaking device that bends light around the user, effective for short bursts.
+- Tactical Shotgun: A short-range scatter-fire weapon loaded with magnetically accelerated flechettes.
+- Plasma Sword: A blade of contained plasma held in a magnetic sheath, capable of melting through bulkheads.
+- Kinetic Hammer: A sledgehammer with a gravity amplifier in the head, multiplying impact force tenfold.

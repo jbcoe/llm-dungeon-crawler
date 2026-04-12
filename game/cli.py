@@ -8,6 +8,7 @@ import ollama
 from rich.console import Console
 
 from game.ai import AIGenerator
+from game.content import validate_content_dir
 from game.engine import GameEngine
 from game.utils import get_model_name, models_match
 
@@ -125,6 +126,17 @@ def main() -> None:
         ),
     )
     args = parser.parse_args()
+
+    if args.content_dir is not None:
+        errors = validate_content_dir(args.content_dir)
+        if errors:
+            console.print(
+                f"[bold red]ERROR: Invalid content directory "
+                f"'{args.content_dir}'[/bold red]"
+            )
+            for error in errors:
+                console.print(f"  [red]•[/red] {error}")
+            sys.exit(1)
 
     with AIGenerator.manage_ollama(args.model):
         check_ollama_connection(args.model)
