@@ -36,6 +36,9 @@ NPCS = load_data("npcs.md")
 ROOMS = load_data("rooms.md")
 
 
+_ENEMY_BLOCK_EXIT_CHANCE = 0.50
+
+
 def _get_item_mechanics(item_data: dict[str, str], floor: int) -> dict[str, Any]:
     """Determine item mechanics based on its name and floor."""
     name_lower = item_data["name"].lower()
@@ -99,6 +102,9 @@ def generate_mechanics(
         enemy_data = random.choice(ENEMIES)
         hp = 10 + floor * 5
         attack = 3 + floor * 2
+        blocked: list[str] = []
+        if len(exits) >= 3 and random.random() < _ENEMY_BLOCK_EXIT_CHANCE:
+            blocked = [random.choice(exits)]
         room_enemies.append(
             {
                 "name": enemy_data["name"],
@@ -106,6 +112,7 @@ def generate_mechanics(
                 "hp": hp,
                 "max_hp": hp,
                 "attack": attack,
+                "blocked_exits": blocked,
             }
         )
 
