@@ -1,9 +1,9 @@
 """Tests for the game engine logic."""
 
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import call, patch
 
-from game.engine import GameEngine
+from game.engine import GameEngine, GameUI
 from game.models import NPC, Enemy, Item, Room
 
 
@@ -136,3 +136,71 @@ def test_history_truncation(fake_ai: Any) -> None:
     engine.game_loop()
 
     assert engine.history == ["look", "quit"]
+
+
+def test_loading_bar_disabled_by_default(fake_ai: Any) -> None:
+    """Test that no loading bar is shown when max_loading_time is 0."""
+    engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai)
+    assert engine.max_loading_time == 0.0
+
+    with patch.object(engine.ui, "show_loading_bar") as mock_loading:
+        engine.start()
+
+    mock_loading.assert_not_called()
+
+
+def test_loading_bar_shown_on_room_transition(fake_ai: Any) -> None:
+    """Test that loading bar is triggered on room transitions when enabled."""
+    engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai, max_loading_time=5.0)
+    assert engine.max_loading_time == 5.0
+
+    with patch.object(engine.ui, "show_loading_bar") as mock_loading:
+        with patch("game.engine.random.uniform", return_value=2.5):
+            engine.start()
+
+    mock_loading.assert_called_once_with(2.5)
+
+
+def test_loading_bar_uses_random_duration(fake_ai: Any) -> None:
+    """Test that loading duration is drawn from [0, max_loading_time]."""
+    engine = GameEngine(
+        mock_input=["quit"], ai_generator=fake_ai, max_loading_time=10.0
+    )
+    engine.current_room = Room(name="Start", description="Start room", exits=["north"])
+    engine.grid[(1, 1)] = engine.current_room
+
+    with patch.object(engine.ui, "show_loading_bar") as mock_loading:
+        with patch("game.engine.random.uniform", return_value=3.7) as mock_uniform:
+            engine.enter_new_room("start")
+
+    mock_uniform.assert_called_once_with(0, 10.0)
+    mock_loading.assert_called_once_with(3.7)
+
+
+def test_show_loading_bar_skips_on_zero_duration() -> None:
+    """Test that show_loading_bar does nothing for a zero duration."""
+    ui = GameUI()
+    with patch("game.engine.time.sleep") as mock_sleep:
+        ui.show_loading_bar(0.0)
+
+    mock_sleep.assert_not_called()
+
+
+def test_show_loading_bar_skips_on_negative_duration() -> None:
+    """Test that show_loading_bar does nothing for a negative duration."""
+    ui = GameUI()
+    with patch("game.engine.time.sleep") as mock_sleep:
+        ui.show_loading_bar(-1.0)
+
+    mock_sleep.assert_not_called()
+
+
+def test_show_loading_bar_sleeps_correct_total_time() -> None:
+    """Test that show_loading_bar sleeps the correct total duration."""
+    ui = GameUI()
+    with patch("game.engine.time.sleep") as mock_sleep:
+        ui.show_loading_bar(4.0)
+
+    # 40 steps, each sleeping 4.0/40 = 0.1 seconds
+    assert mock_sleep.call_count == 40
+    assert mock_sleep.call_args_list == [call(0.1)] * 40

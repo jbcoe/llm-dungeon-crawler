@@ -1,10 +1,12 @@
 """Core game engine responsible for the game loop and command handling."""
 
 import random
+import time
 
 from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.markup import escape
+from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
 
 from game.ai import AIGenerator
 from game.logger import log_event, setup_logger
@@ -164,6 +166,29 @@ class GameUI:
                     row.append(" ")
             self.print(" ".join(row))
 
+    def show_loading_bar(self, duration: float) -> None:
+        """
+        Display a retro loading bar for the given duration in seconds.
+
+        Shows a yellow "Loading..." label alongside a filling progress bar.
+        Durations <= 0 are treated as no-ops and return immediately.
+        """
+        if duration <= 0:
+            return
+        steps = 40
+        interval = duration / steps
+        with Progress(
+            TextColumn("[bold yellow]Loading...[/bold yellow]"),
+            BarColumn(bar_width=None),
+            TimeRemainingColumn(),
+            console=self.console,
+            transient=True,
+        ) as progress:
+            task = progress.add_task("loading", total=steps)
+            for _ in range(steps):
+                time.sleep(interval)
+                progress.advance(task)
+
 
 class GameEngine:
     """Main game engine class managing state and logic."""
@@ -176,8 +201,15 @@ class GameEngine:
         ai_generator: AIGenerator | None = None,
         map_size: int = 8,
         map_seed: int | None = None,
+        max_loading_time: float = 0.0,
     ) -> None:
-        """Initialize the game engine."""
+        """
+        Initialize the game engine.
+
+        The ``max_loading_time`` parameter controls the maximum random loading
+        duration (in seconds) shown between room transitions.  When set to 0
+        (the default) no loading screen is displayed.
+        """
         self.player = Player()
         self.ai = ai_generator or AIGenerator(model=model)
         self.model = self.ai.model
@@ -193,6 +225,7 @@ class GameEngine:
         self.grid: dict[tuple[int, int], Room] = {}
         self.ui = GameUI()
         self.rest_count = 0
+        self.max_loading_time = max_loading_time
         self.setup_readline()
 
     def setup_readline(self) -> None:
@@ -290,6 +323,10 @@ class GameEngine:
         coord = (self.x, self.y)
         if direction != "start":
             self.ui.print_italic(f"You travel {direction}...")
+
+        if self.max_loading_time > 0:
+            loading_duration = random.uniform(0, self.max_loading_time)
+            self.ui.show_loading_bar(loading_duration)
 
         if coord in self.grid:
             self.ui.print_italic("You've been here before.")
