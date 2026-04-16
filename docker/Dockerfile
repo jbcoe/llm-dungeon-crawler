@@ -58,11 +58,6 @@ RUN if [ "$AGENT" = "gemini" ]; then \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV UV_PROJECT_ENVIRONMENT="/home/vscode/.venv"
 
-# Pre-configure Gemini CLI (Gemini only).
-RUN if [ "$AGENT" = "gemini" ]; then \
-        mkdir -p /home/vscode/.gemini \
-        && echo '{"/workspace": "TRUST_FOLDER"}' > /home/vscode/.gemini/trustedFolders.json \
-        && echo '{"selectedAuthType": "oauth-personal"}' > /home/vscode/.gemini/settings.json; \
-    fi
-
-# For Claude: ~/.claude is mounted from the host at runtime to persist auth state between sessions.
+# For both agents, config dirs (~/.gemini / ~/.claude) are mounted from the host at runtime
+# to persist auth state between sessions. Default config files are seeded by the launch
+# script before the mount, so image-side preconfiguration is not needed here.

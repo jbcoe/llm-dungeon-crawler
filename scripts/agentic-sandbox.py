@@ -89,6 +89,21 @@ def main() -> None:
     if args.agent == "gemini":
         run_args.extend(["--network", "host"])
         gemini_config_dir = os.path.expanduser("~/.gemini")
+        os.makedirs(gemini_config_dir, mode=0o700, exist_ok=True)
+        # Seed default config files if missing so they are accessible inside the
+        # container.
+        # Use os.open with restrictive permissions to avoid exposing credentials to
+        # other local users on multi-user systems.
+        trusted_folders_path = os.path.join(gemini_config_dir, "trustedFolders.json")
+        if not os.path.exists(trusted_folders_path):
+            fd = os.open(trusted_folders_path, os.O_CREAT | os.O_WRONLY, 0o600)
+            os.write(fd, b'{"/workspace": "TRUST_FOLDER"}')
+            os.close(fd)
+        settings_path = os.path.join(gemini_config_dir, "settings.json")
+        if not os.path.exists(settings_path):
+            fd = os.open(settings_path, os.O_CREAT | os.O_WRONLY, 0o600)
+            os.write(fd, b'{"selectedAuthType": "oauth-personal"}')
+            os.close(fd)
         run_args.extend(["-v", f"{gemini_config_dir}:/home/vscode/.gemini"])
         run_args.extend(
             [
