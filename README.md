@@ -43,4 +43,20 @@ Once the game starts, you interact via text commands:
 - **Interaction:** `talk <npc_name>`
 - **Items:** `take <item_name>`, `use <item_name>`, `equip <weapon_name>`, `unequip`
 - **Information:** `look` (describe room again), `status` or `inventory` (check health/items)
+- **Rest:** `rest` — recover 20% of your max HP (minimum 5 HP). You cannot rest while enemies are present. Repeated resting in the same room increases the chance of an enemy spawning, so use it wisely.
 - **Other:** `help`, `quit`
+
+## Command-Line Options
+
+| Option | Default | Description |
+|---|---|---|
+| `--model <name>` | `gemma4:e4b` | The Ollama model used to generate narrative text. Smaller models load faster and use less memory but may produce lower-quality descriptions. Larger or more capable models give richer storytelling at the cost of slower responses. Make sure you have pulled the model via `ollama pull <name>` before launching. |
+| `--size <n>` | `8` | The width/height of the pre-generated dungeon map (minimum 3). Larger maps mean more rooms to explore but take slightly longer to generate at start-up. |
+| `--history-length <n>` | `1000` | Maximum number of commands retained in the readline history. Set to `0` to disable history. Reducing this value may help in memory-constrained environments. |
+| `--experimental-max-loading-time <seconds>` | `0` (disabled) | **Experimental.** Adds a random delay of up to the given number of seconds between room transitions, simulating the feel of a retro game loading screen. Has no effect on gameplay beyond pacing. |
+
+Example — launch with a smaller model on a map of 12×12:
+
+```bash
+uv run dungeon-crawler --model llama3 --size 12
+```
