@@ -2,6 +2,8 @@
 
 from unittest.mock import patch
 
+import pytest
+
 from game.map import Coordinate, Direction, Map
 
 
@@ -49,8 +51,6 @@ def test_coordinate() -> None:
 
 def test_map_size_validation() -> None:
     """Verify that Map size must be at least 3."""
-    import pytest
-
     with pytest.raises(ValueError, match="Map size must be at least 3"):
         Map(size=2)
     with pytest.raises(ValueError, match="Map size must be at least 3"):
@@ -168,3 +168,79 @@ def test_digger_build_map() -> None:
     # The digger should terminate, meaning `walk_maze` completed.
     # It should not have any infinite loops.
     assert len(m.visitable_cells) < (3 * 3)  # Some cells were visited
+
+
+def test_find_dead_ends() -> None:
+    """Verify find_dead_ends returns only cells with exactly one path neighbour."""
+    with patch("game.map.Digger.build_map"):
+        m = Map(size=5)
+        # Build a simple L-shaped path: (1,1) -> (1,2) -> (2,2)
+        # (1,1) has one neighbour: (1,2) — dead end
+        # (1,2) has two neighbours: (1,1) and (2,2) — not a dead end
+        # (2,2) has one neighbour: (1,2) — dead end
+        m.space[1, 1] = True
+        m.space[1, 2] = True
+        m.space[2, 2] = True
+
+        dead_ends = m.find_dead_ends()
+        dead_end_coords = set(dead_ends)
+
+        assert Coordinate(1, 1) in dead_end_coords
+        assert Coordinate(2, 2) in dead_end_coords
+        assert Coordinate(1, 2) not in dead_end_coords
+
+
+def test_get_final_room_coord_basic() -> None:
+    """Verify get_final_room_coord returns a dead-end that is not the start."""
+    with patch("game.map.Digger.build_map"):
+        m = Map(size=5)
+        # Path: (1,1) -> (1,2) -> (1,3)
+        m.space[1, 1] = True
+        m.space[1, 2] = True
+        m.space[1, 3] = True
+
+        start = Coordinate(1, 1)
+        final = m.get_final_room_coord(start)
+
+        # Both (1,1) and (1,3) are dead-ends; only (1,3) is eligible.
+        assert final is not None
+        assert final == Coordinate(1, 3)
+        assert final != start
+
+
+def test_get_final_room_coord_excludes_start() -> None:
+    """Verify get_final_room_coord never returns the starting cell."""
+    with patch("game.map.Digger.build_map"):
+        m = Map(size=5)
+        # Only two cells; start (1,1) is also a dead-end but must be excluded.
+        m.space[1, 1] = True
+        m.space[1, 2] = True
+
+        final = m.get_final_room_coord(Coordinate(1, 1))
+        assert final is not None
+        assert final == Coordinate(1, 2)
+
+
+def test_get_final_room_coord_no_dead_ends_returns_none() -> None:
+    """Return None when no reachable dead-ends exist aside from the start."""
+    with patch("game.map.Digger.build_map"):
+        m = Map(size=5)
+        # Single-cell map: only (1,1) is a path — start itself is the only dead-end.
+        m.space[1, 1] = True
+
+        final = m.get_final_room_coord(Coordinate(1, 1))
+        assert final is None
+
+
+def test_get_final_room_coord_on_real_map() -> None:
+    """Verify get_final_room_coord picks a valid dead-end on a real map."""
+    m = Map(size=8, seed=42)
+    final = m.get_final_room_coord()
+
+    # A real 8×8 map should always have at least one dead-end away from (1,1)
+    assert final is not None
+    assert final != Coordinate(1, 1)
+    # The final room must be a path cell
+    assert m.space[final.x, final.y]
+    # The final room must have exactly one exit (dead-end)
+    assert len(m.get_exits(final.x, final.y)) == 1

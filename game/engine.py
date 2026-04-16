@@ -97,6 +97,12 @@ class GameUI:
 
     def display_room(self, room: Room) -> None:
         """Print the description and contents of the current room."""
+        if room.is_final_room:
+            self.print(
+                "\n[bold magenta]"
+                "*** THE FINAL CHAMBER — THE END OF YOUR QUEST ***"
+                "[/bold magenta]"
+            )
         self.print(f"\n[bold cyan]Room: {escape(room.name)}[/bold cyan]")
         self.print(f"{escape(room.description)}")
         self.print(f"[bold yellow]Exits:[/bold yellow] {', '.join(room.exits)}")
@@ -110,10 +116,16 @@ class GameUI:
 
         if room.enemies:
             for enemy in room.enemies:
-                self.print(
-                    f"[bold red]Enemy:[/bold red] {escape(enemy.name)} "
-                    f"(HP: {enemy.hp}/{enemy.max_hp}) - {escape(enemy.description)}"
-                )
+                if enemy.is_boss:
+                    self.print(
+                        f"[bold magenta]BOSS:[/bold magenta] {escape(enemy.name)} "
+                        f"(HP: {enemy.hp}/{enemy.max_hp}) - {escape(enemy.description)}"
+                    )
+                else:
+                    self.print(
+                        f"[bold red]Enemy:[/bold red] {escape(enemy.name)} "
+                        f"(HP: {enemy.hp}/{enemy.max_hp}) - {escape(enemy.description)}"
+                    )
 
         if room.npcs:
             for npc in room.npcs:
@@ -216,6 +228,7 @@ class GameEngine:
         self.floor = 1
         self.current_room: Room | None = None
         self.running = True
+        self.quest_complete = False
         self.history: list[str] = []
         self.max_history = max_history
         self.mock_input = mock_input
@@ -226,6 +239,7 @@ class GameEngine:
         self.ui = GameUI()
         self.rest_count = 0
         self.max_loading_time = max_loading_time
+        self.final_room_coord = self.map_grid.get_final_room_coord()
         self.setup_readline()
 
     def setup_readline(self) -> None:
@@ -340,7 +354,18 @@ class GameEngine:
             map_exits: list[str] = []
             try:
                 map_exits = self.map_grid.get_exits(self.x, self.y)
-                room_data = self.ai.generate_room(self.floor, context, exits=map_exits)
+                is_final = self.final_room_coord is not None and (self.x, self.y) == (
+                    self.final_room_coord.x,
+                    self.final_room_coord.y,
+                )
+                if is_final:
+                    room_data = self.ai.generate_final_room(
+                        self.floor, context, exits=map_exits
+                    )
+                else:
+                    room_data = self.ai.generate_room(
+                        self.floor, context, exits=map_exits
+                    )
                 self.current_room = Room(**room_data)
                 self.grid[coord] = self.current_room
             except Exception as e:
@@ -406,6 +431,8 @@ class GameEngine:
         if self.player.hp <= 0:
             log_event("GAME_END", "Game Over. Player died.")
             self.ui.print("Game Over. You have died.", style="bold red")
+        elif self.quest_complete:
+            log_event("GAME_END", "Quest complete. Player won.")
 
     def handle_help(self) -> None:
         """Handle the help command."""
@@ -482,6 +509,7 @@ class GameEngine:
         self.ui.print(f"You attack {enemy.name} for {damage} damage!")
 
         # Enemy attacks if still alive, also with randomized damage
+        boss_defeated = False
         if enemy.hp > 0:
             enemy_damage = self._roll_damage(enemy.attack)
             self.player.take_damage(enemy_damage)
@@ -489,6 +517,7 @@ class GameEngine:
         else:
             self.ui.print(f"You defeated {enemy.name}!", style="bold red")
             self.current_room.enemies.remove(enemy)
+            boss_defeated = enemy.is_boss and self.current_room.is_final_room
 
         # Narrative
         narrative = self.ai.narrate_combat(
@@ -499,6 +528,24 @@ class GameEngine:
             damage_dealt=damage,
         )
         self.ui.print_italic(narrative)
+
+        if boss_defeated and not self.current_room.enemies:
+            self._handle_quest_complete(enemy.name)
+
+    def _handle_quest_complete(self, boss_name: str) -> None:
+        """Handle quest completion after the final boss is defeated."""
+        self.quest_complete = True
+        self.running = False
+        log_event("QUEST_COMPLETE", f"Player defeated the final boss: {boss_name}")
+        self.ui.print("\n[bold yellow]*** QUEST COMPLETE! ***[/bold yellow]")
+        self.ui.print(
+            f"You have vanquished {boss_name}! The dungeon's darkness lifts...",
+            style="bold green",
+        )
+        self.ui.print(
+            "Your quest is complete. The dungeon is freed from its curse.",
+            style="bold green",
+        )
 
     def handle_talk(self, parts: list[str]) -> None:
         """Handle the talk command."""

@@ -421,3 +421,156 @@ def test_map_integration(engine: GameEngine) -> None:
         # Now (1, 2) should be * and (1, 1) should be o
         assert_printed(mock_print, "[bold red]*[/bold red]")
         assert_printed(mock_print, "[bold green]o[/bold green]")
+
+
+# ---------------------------------------------------------------------------
+# Final room and quest completion tests
+# ---------------------------------------------------------------------------
+
+
+def test_display_room_shows_boss_label(engine: GameEngine) -> None:
+    """Boss enemies are shown with 'BOSS:' label instead of 'Enemy:'."""
+    assert engine.current_room is not None
+    engine.current_room = Room(
+        name="Throne of Bones",
+        description="Lair of evil.",
+        exits=["south"],
+        is_final_room=True,
+        enemies=[
+            Enemy(
+                name="The Lich King",
+                description="Undead sorcerer",
+                hp=200,
+                max_hp=200,
+                attack=30,
+                is_boss=True,
+            )
+        ],
+    )
+    with patch("game.engine.GameUI.print") as mock_print:
+        engine.display_room()
+        assert_printed(mock_print, "BOSS:")
+        assert_printed(mock_print, "The Lich King")
+        assert_printed(mock_print, "THE FINAL CHAMBER")
+
+
+def test_quest_complete_on_boss_defeat(fake_ai: Any) -> None:
+    """Defeating the final boss in the final room triggers quest completion."""
+    engine = GameEngine(mock_input=["attack lich king", "quit"], ai_generator=fake_ai)
+    boss = Enemy(
+        name="Lich King",
+        description="Undead",
+        hp=1,
+        max_hp=100,
+        attack=0,
+        is_boss=True,
+    )
+    engine.current_room = Room(
+        name="Throne of Bones",
+        description="Final lair",
+        exits=["south"],
+        is_final_room=True,
+        enemies=[boss],
+    )
+
+    with patch("game.engine.random.randint", return_value=100):
+        engine.game_loop()
+
+    assert engine.quest_complete is True
+    assert engine.running is False
+
+
+def test_quest_not_complete_on_regular_enemy_defeat(fake_ai: Any) -> None:
+    """Defeating a regular enemy does NOT trigger quest completion."""
+    engine = GameEngine(mock_input=["attack goblin", "quit"], ai_generator=fake_ai)
+    regular_enemy = Enemy(
+        name="Goblin", description="Ugly", hp=1, max_hp=10, attack=0, is_boss=False
+    )
+    engine.current_room = Room(
+        name="Corridor",
+        description="A passage",
+        exits=["north"],
+        is_final_room=False,
+        enemies=[regular_enemy],
+    )
+
+    with patch("game.engine.random.randint", return_value=100):
+        engine.game_loop()
+
+    assert engine.quest_complete is False
+
+
+def test_quest_not_complete_if_boss_in_non_final_room(fake_ai: Any) -> None:
+    """A boss-flagged enemy in a non-final room does not end the quest."""
+    engine = GameEngine(mock_input=["attack dark lord", "quit"], ai_generator=fake_ai)
+    boss = Enemy(
+        name="Dark Lord",
+        description="Evil",
+        hp=1,
+        max_hp=100,
+        attack=0,
+        is_boss=True,
+    )
+    engine.current_room = Room(
+        name="Random Room",
+        description="Just a room",
+        exits=["north"],
+        is_final_room=False,
+        enemies=[boss],
+    )
+
+    with patch("game.engine.random.randint", return_value=100):
+        engine.game_loop()
+
+    assert engine.quest_complete is False
+
+
+def test_engine_has_final_room_coord(fake_ai: Any) -> None:
+    """GameEngine should compute a final_room_coord during initialisation."""
+    engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai, map_seed=42)
+    # A real 8×8 map will always yield a dead-end furthest from the start
+    assert engine.final_room_coord is not None
+
+
+def test_enter_final_room_uses_generate_final_room(fake_ai: Any) -> None:
+    """When entering the final room coordinate, generate_final_room is called."""
+    engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai, map_size=5)
+
+    from game.map import Coordinate
+
+    # Force a known final_room_coord so we can control when it triggers
+    engine.final_room_coord = Coordinate(2, 1)
+    engine.x, engine.y = 2, 0  # Will step to (2,1) when going north
+
+    with (
+        patch.object(
+            engine.ai,
+            "generate_final_room",
+            return_value={
+                "room_type": {"name": "Throne", "description": "Lair"},
+                "exits": ["south"],
+                "enemies": [
+                    {
+                        "name": "Boss",
+                        "description": "Evil",
+                        "hp": 100,
+                        "max_hp": 100,
+                        "attack": 20,
+                        "is_boss": True,
+                    }
+                ],
+                "npcs": [],
+                "items": [],
+                "is_final_room": True,
+                "description": "Dark lair.",
+                "name": "Throne",
+            },
+        ) as mock_final,
+        patch.object(engine.ai, "generate_room") as mock_regular,
+    ):
+        engine.enter_new_room("north")
+
+    mock_final.assert_called_once()
+    mock_regular.assert_not_called()
+    assert engine.current_room is not None
+    assert engine.current_room.is_final_room is True
