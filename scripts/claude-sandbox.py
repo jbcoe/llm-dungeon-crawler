@@ -23,11 +23,6 @@ def main() -> None:
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable verbose logging."
     )
-    parser.add_argument(
-        "prompt",
-        nargs="?",
-        help="Optional prompt to pass directly to Claude Code (non-interactive).",
-    )
 
     args = parser.parse_args()
 
@@ -70,10 +65,7 @@ def main() -> None:
     else:
         update_cmd = ""
 
-    if args.prompt:
-        claude_cmd = f'claude --dangerously-skip-permissions -p "{args.prompt}"'
-    else:
-        claude_cmd = "claude --dangerously-skip-permissions"
+    claude_cmd = "claude --dangerously-skip-permissions"
 
     container_cmd = update_cmd + claude_cmd
 
