@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.markup import escape
 from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
 
-from game.ai import AIGenerator
+from game.ai import DEFAULT_LLAMA_SERVER_URL, AIGenerator
 from game.logger import log_event, setup_logger
 from game.map import Map
 from game.mechanics import ENEMIES
@@ -197,7 +197,8 @@ class GameEngine:
         self,
         mock_input: list[str] | None = None,
         max_history: int = 1000,
-        model: str = "gemma4:e4b",
+        model: str = "default",
+        server_url: str = DEFAULT_LLAMA_SERVER_URL,
         ai_generator: AIGenerator | None = None,
         map_size: int = 8,
         map_seed: int | None = None,
@@ -211,7 +212,7 @@ class GameEngine:
         (the default) no loading screen is displayed.
         """
         self.player = Player()
-        self.ai = ai_generator or AIGenerator(model=model)
+        self.ai = ai_generator or AIGenerator(model=model, server_url=server_url)
         self.model = self.ai.model
         self.floor = 1
         self.current_room: Room | None = None

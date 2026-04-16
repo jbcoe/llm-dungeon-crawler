@@ -6,7 +6,7 @@ This document outlines how to develop and contribute to `llm-dungeon-crawler`.
 
 This project uses two different AI systems for distinct purposes:
 
-1. **Ollama (Local)**: Powers the game's actual runtime (NPC dialogue, room descriptions).
+1. **llama-server (Local)**: Powers the game's actual runtime (NPC dialogue, room descriptions).
 2. **Gemini or Claude (Cloud)**: Powers the **Agentic Development Workflow** via the Gemini CLI or Claude Code to help write code, fix bugs, and refactor.
 
 ## Agentic Development Workflow
@@ -49,7 +49,7 @@ All content is stored in the `game/data/` directory as standard Markdown (`.md`)
    Lists of available enemies, items, NPCs, and rooms are defined in their respective markdown files (e.g., `enemies.md`, `rooms.md`). To add new content, add a new line following the established `- Name: Description` format. The game engine automatically loads these at runtime.
 
 2. **AI Prompts:**
-   All instructions sent to the Ollama LLM are stored as prompt templates (e.g., `prompts/room.md`, `prompts/combat.md`). These files control the tone, style, and rules the AI follows when generating narrative text.
+   All instructions sent to the LLM are stored as prompt templates (e.g., `prompts/room.md`, `prompts/combat.md`). These files control the tone, style, and rules the AI follows when generating narrative text.
 
    - If you want the game to feel like a sci-fi adventure rather than dark fantasy, you can simply edit the prompt text in these files.
    - The engine uses variables wrapped in curly braces (e.g., `{enemy_name}`). When modifying the prompt text, ensure these variables are kept intact so the engine can inject the correct context into the prompts.
@@ -61,12 +61,12 @@ The codebase is structured to separate deterministic mechanics from LLM flavor:
 
 - `game/mechanics.py`: Handles all stats, logic, and procedural generation based on tables.
 - `game/data/*.md`: Markdown lists containing definitions for enemies, items, NPCs, and rooms. Add new content here!
-- `game/ai.py`: Connects to Ollama to generate atmospheric text based on the mechanics output.
+- `game/ai.py`: Connects to llama-server to generate atmospheric text based on the mechanics output.
 - `game/engine.py`: The core game loop, state management, and command parser.
 
 ## Running Tests
 
-The project uses `pytest`. AI API calls are mocked globally in `tests/conftest.py` so tests are fast, deterministic, and don't require an active Ollama server.
+The project uses `pytest`. AI API calls are mocked globally in `tests/conftest.py` so tests are fast, deterministic, and don't require an active llama-server.
 
 To run the test suite:
 

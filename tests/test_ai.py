@@ -16,11 +16,21 @@ def test_load_prompt_missing() -> None:
             load_prompt("totally_missing_file_12345.md")
 
 
+def _make_chat_response(content: str) -> MagicMock:
+    """Build a minimal mock that looks like an openai ChatCompletion response."""
+    message = MagicMock()
+    message.content = content
+    choice = MagicMock()
+    choice.message = message
+    response = MagicMock()
+    response.choices = [choice]
+    return response
+
+
 @patch("game.ai.generate_mechanics")
-@patch("game.ai.chat")
 @patch("game.ai.load_prompt")
 def test_generate_room(
-    mock_load_prompt: MagicMock, mock_chat: MagicMock, mock_gen_mechanics: MagicMock
+    mock_load_prompt: MagicMock, mock_gen_mechanics: MagicMock
 ) -> None:
     """Verify room mechanics are parsed and injected into the room prompt correctly."""
     mock_gen_mechanics.return_value = {
@@ -36,100 +46,116 @@ def test_generate_room(
         "ENEMIES: {enemies_str} | NPCS: {npcs_str} | "
         "ITEMS: {items_str} | CTX: {previous_context}"
     )
-    mock_chat.return_value = MagicMock(message=MagicMock(content="AI Description"))
 
-    result = AIGenerator().generate_room(floor=1, previous_context="Test Context")
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    ai.client.chat.completions.create.return_value = _make_chat_response(
+        "AI Description"
+    )
+
+    result = ai.generate_room(floor=1, previous_context="Test Context")
 
     assert result["description"] == "AI Description"
 
-    prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+    call_kwargs = ai.client.chat.completions.create.call_args[1]
+    prompt_sent = call_kwargs["messages"][0]["content"]
     assert prompt_sent == (
         "ROOM: Test Room | DESC: A dark place | EXITS: north, south | "
         "ENEMIES: Goblin | NPCS: Merchant | ITEMS: Potion | CTX: Test Context"
     )
 
 
-@patch("game.ai.chat")
 @patch("game.ai.load_prompt")
-def test_narrate_item_use(mock_load_prompt: MagicMock, mock_chat: MagicMock) -> None:
+def test_narrate_item_use(mock_load_prompt: MagicMock) -> None:
     """Verify that item usage details are formatted into the narration prompt."""
     mock_load_prompt.return_value = (
         "ITEM: {item_name} | DESC: {item_description} | CTX: {room_context}"
     )
-    mock_chat.return_value = MagicMock(message=MagicMock(content="Item Used"))
 
-    result = AIGenerator().narrate_item_use("Potion", "Heals", "Dark Room")
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    ai.client.chat.completions.create.return_value = _make_chat_response("Item Used")
+
+    result = ai.narrate_item_use("Potion", "Heals", "Dark Room")
     assert result == "Item Used"
 
-    prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+    call_kwargs = ai.client.chat.completions.create.call_args[1]
+    prompt_sent = call_kwargs["messages"][0]["content"]
     assert prompt_sent == "ITEM: Potion | DESC: Heals | CTX: Dark Room"
 
 
-@patch("game.ai.chat")
 @patch("game.ai.load_prompt")
-def test_generate_npc_response(
-    mock_load_prompt: MagicMock, mock_chat: MagicMock
-) -> None:
+def test_generate_npc_response(mock_load_prompt: MagicMock) -> None:
     """Validate that conversation history and NPC state are passed to the chat API."""
     mock_load_prompt.return_value = (
         "NPC: {npc_name} | CTX: {npc_context} | MSG: {player_message} | HIST: {history}"
     )
-    mock_chat.return_value = MagicMock(message=MagicMock(content="Hello traveler"))
 
-    result = AIGenerator().generate_npc_response("Merchant", "Sells", "Hello", "None")
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    ai.client.chat.completions.create.return_value = _make_chat_response(
+        "Hello traveler"
+    )
+
+    result = ai.generate_npc_response("Merchant", "Sells", "Hello", "None")
     assert result == "Hello traveler"
 
-    prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+    call_kwargs = ai.client.chat.completions.create.call_args[1]
+    prompt_sent = call_kwargs["messages"][0]["content"]
     assert prompt_sent == "NPC: Merchant | CTX: Sells | MSG: Hello | HIST: None"
 
 
-@patch("game.ai.chat")
 @patch("game.ai.load_prompt")
-def test_narrate_combat(mock_load_prompt: MagicMock, mock_chat: MagicMock) -> None:
+def test_narrate_combat(mock_load_prompt: MagicMock) -> None:
     """Ensure combat variables are substituted safely into the combat prompt."""
     mock_load_prompt.return_value = (
         "ACT: {player_action} | P_HP: {player_hp} | "
         "ENM: {enemy_name} | E_HP: {enemy_hp} | DMG: {damage_dealt}"
     )
-    mock_chat.return_value = MagicMock(message=MagicMock(content="Slash!"))
 
-    result = AIGenerator().narrate_combat("attacks", 100, "Goblin", 10, 5)
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    ai.client.chat.completions.create.return_value = _make_chat_response("Slash!")
+
+    result = ai.narrate_combat("attacks", 100, "Goblin", 10, 5)
     assert result == "Slash!"
 
-    prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+    call_kwargs = ai.client.chat.completions.create.call_args[1]
+    prompt_sent = call_kwargs["messages"][0]["content"]
     assert prompt_sent == "ACT: attacks | P_HP: 100 | ENM: Goblin | E_HP: 10 | DMG: 5"
 
 
-@patch("game.ai.chat")
 @patch("game.ai.load_prompt")
-def test_generate_intro(mock_load_prompt: MagicMock, mock_chat: MagicMock) -> None:
+def test_generate_intro(mock_load_prompt: MagicMock) -> None:
     """Test that a haunting intro is correctly loaded and parsed from the LLM."""
     mock_load_prompt.return_value = "Test Intro Prompt"
-    mock_chat.return_value = MagicMock(
-        message=MagicMock(content="Welcome to the dungeon.")
+
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    ai.client.chat.completions.create.return_value = _make_chat_response(
+        "Welcome to the dungeon."
     )
 
-    result = AIGenerator().generate_intro()
+    result = ai.generate_intro()
     assert result == "Welcome to the dungeon."
 
-    prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+    call_kwargs = ai.client.chat.completions.create.call_args[1]
+    prompt_sent = call_kwargs["messages"][0]["content"]
     assert prompt_sent == "Test Intro Prompt"
 
 
-@patch("game.ai.chat")
-def test_empty_ai_response(mock_chat: MagicMock) -> None:
-    """Validate the game raises ValueError on empty Ollama response."""
-    # Simulate an empty message content
-    mock_chat.return_value = MagicMock(message=MagicMock(content=None))
+def test_empty_ai_response() -> None:
+    """Validate the game raises ValueError on empty llama-server response."""
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    ai.client.chat.completions.create.return_value = _make_chat_response("")
+
     with pytest.raises(ValueError, match="AI returned an empty response."):
-        AIGenerator().generate_intro()
+        ai.generate_intro()
 
 
 @patch("game.ai.generate_mechanics")
-@patch("game.ai.chat")
-def test_generate_room_real_prompt(
-    mock_chat: MagicMock, mock_gen_mechanics: MagicMock
-) -> None:
+def test_generate_room_real_prompt(mock_gen_mechanics: MagicMock) -> None:
     """Verify mechanics are parsed and injected into the real room prompt correctly."""
     mock_gen_mechanics.return_value = {
         "room_type": {"name": "Test Room", "description": "A dark place"},
@@ -138,11 +164,17 @@ def test_generate_room_real_prompt(
         "npcs": [{"name": "Merchant", "description": "Sells things"}],
         "items": [{"name": "Potion", "description": "Heals", "effect_type": "healing"}],
     }
-    mock_chat.return_value = MagicMock(message=MagicMock(content="AI Description"))
 
-    AIGenerator().generate_room(floor=1, previous_context="Test Context")
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    ai.client.chat.completions.create.return_value = _make_chat_response(
+        "AI Description"
+    )
 
-    prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+    ai.generate_room(floor=1, previous_context="Test Context")
+
+    call_kwargs = ai.client.chat.completions.create.call_args[1]
+    prompt_sent = call_kwargs["messages"][0]["content"]
     expected_prompt = load_prompt("room.md").format(
         previous_context="Test Context",
         room_type_name="Test Room",
@@ -155,14 +187,16 @@ def test_generate_room_real_prompt(
     assert prompt_sent == expected_prompt
 
 
-@patch("game.ai.chat")
-def test_narrate_item_use_real_prompt(mock_chat: MagicMock) -> None:
+def test_narrate_item_use_real_prompt() -> None:
     """Verify that item usage details are formatted into the real narration prompt."""
-    mock_chat.return_value = MagicMock(message=MagicMock(content="Item Used"))
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    ai.client.chat.completions.create.return_value = _make_chat_response("Item Used")
 
-    AIGenerator().narrate_item_use("Potion", "Heals", "Dark Room")
+    ai.narrate_item_use("Potion", "Heals", "Dark Room")
 
-    prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+    call_kwargs = ai.client.chat.completions.create.call_args[1]
+    prompt_sent = call_kwargs["messages"][0]["content"]
     expected_prompt = load_prompt("item_use.md").format(
         item_name="Potion",
         item_description="Heals",
@@ -171,14 +205,18 @@ def test_narrate_item_use_real_prompt(mock_chat: MagicMock) -> None:
     assert prompt_sent == expected_prompt
 
 
-@patch("game.ai.chat")
-def test_generate_npc_response_real_prompt(mock_chat: MagicMock) -> None:
+def test_generate_npc_response_real_prompt() -> None:
     """Validate history and NPC state are passed to the real chat API prompt."""
-    mock_chat.return_value = MagicMock(message=MagicMock(content="Hello traveler"))
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    ai.client.chat.completions.create.return_value = _make_chat_response(
+        "Hello traveler"
+    )
 
-    AIGenerator().generate_npc_response("Merchant", "Sells", "Hello", "None")
+    ai.generate_npc_response("Merchant", "Sells", "Hello", "None")
 
-    prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+    call_kwargs = ai.client.chat.completions.create.call_args[1]
+    prompt_sent = call_kwargs["messages"][0]["content"]
     expected_prompt = load_prompt("npc.md").format(
         npc_name="Merchant",
         npc_context="Sells",
@@ -188,14 +226,16 @@ def test_generate_npc_response_real_prompt(mock_chat: MagicMock) -> None:
     assert prompt_sent == expected_prompt
 
 
-@patch("game.ai.chat")
-def test_narrate_combat_real_prompt(mock_chat: MagicMock) -> None:
+def test_narrate_combat_real_prompt() -> None:
     """Ensure combat variables are substituted safely into the real combat prompt."""
-    mock_chat.return_value = MagicMock(message=MagicMock(content="Slash!"))
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    ai.client.chat.completions.create.return_value = _make_chat_response("Slash!")
 
-    AIGenerator().narrate_combat("attacks", 100, "Goblin", 10, 5)
+    ai.narrate_combat("attacks", 100, "Goblin", 10, 5)
 
-    prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+    call_kwargs = ai.client.chat.completions.create.call_args[1]
+    prompt_sent = call_kwargs["messages"][0]["content"]
     expected_prompt = load_prompt("combat.md").format(
         player_action="attacks",
         player_hp=100,
@@ -206,15 +246,17 @@ def test_narrate_combat_real_prompt(mock_chat: MagicMock) -> None:
     assert prompt_sent == expected_prompt
 
 
-@patch("game.ai.chat")
-def test_generate_intro_real_prompt(mock_chat: MagicMock) -> None:
+def test_generate_intro_real_prompt() -> None:
     """Test that a haunting intro is correctly loaded from the real LLM prompt."""
-    mock_chat.return_value = MagicMock(
-        message=MagicMock(content="Welcome to the dungeon.")
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    ai.client.chat.completions.create.return_value = _make_chat_response(
+        "Welcome to the dungeon."
     )
 
-    AIGenerator().generate_intro()
+    ai.generate_intro()
 
-    prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
+    call_kwargs = ai.client.chat.completions.create.call_args[1]
+    prompt_sent = call_kwargs["messages"][0]["content"]
     expected_prompt = load_prompt("intro.md")
     assert prompt_sent == expected_prompt
