@@ -74,10 +74,13 @@ def main() -> None:
     # every session.
     host_claude_dir = os.path.expanduser("~/.claude")
     host_claude_json = os.path.expanduser("~/.claude.json")
-    os.makedirs(host_claude_dir, exist_ok=True)
+    os.makedirs(host_claude_dir, mode=0o700, exist_ok=True)
     # Ensure the file exists on the host so Docker doesn't create it as a directory.
+    # Use os.open with restrictive permissions to avoid exposing credentials to
+    # other local users on multi-user systems.
     if not os.path.exists(host_claude_json):
-        open(host_claude_json, "w").close()
+        fd = os.open(host_claude_json, os.O_CREAT | os.O_WRONLY, 0o600)
+        os.close(fd)
 
     run_args = [
         "docker",
