@@ -87,8 +87,6 @@ def main() -> None:
         "run",
         "-it",
         "--rm",
-        "--network",
-        "host",
         "-v",
         f"{project_root}:/workspace",
         "-v",
