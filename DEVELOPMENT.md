@@ -7,42 +7,37 @@ This document outlines how to develop and contribute to `llm-dungeon-crawler`.
 This project uses two different AI systems for distinct purposes:
 
 1. **Ollama (Local)**: Powers the game's actual runtime (NPC dialogue, room descriptions).
-2. **Gemini (Cloud)**: Powers the **Agentic Development Workflow** via the Gemini CLI to help write code, fix bugs, and refactor.
-
-### Compliance & API Usage
-
-**Important:** To comply with the [Gemini CLI Terms of Use](https://geminicli.com/docs/resources/tos-privacy/#prohibited-use), the sandbox environment **must** use a paid API key (via Google AI Studio or Vertex AI).
-
-Specifically, see the **"Prohibited Use"** section of the Gemini CLI Terms of Use, which states that you may not use the service with OAuth credentials via **"third-party software, tools, or services"** and warns that violations **"may result in suspension or termination"**. Because the Docker sandbox acts as a third-party wrapper around the Gemini CLI, use a **paid API key** instead so your usage falls under the applicable API Terms of Service for programmatic/containerized access.
+2. **Gemini or Claude (Cloud)**: Powers the **Agentic Development Workflow** via the Gemini CLI or Claude Code to help write code, fix bugs, and refactor.
 
 ## Agentic Development Workflow
 
-To work on this codebase using AI assistance, you should use the provided Docker sandbox. This keeps your host machine clean while giving the Gemini CLI full access to the project.
+To work on this codebase using AI assistance, you should use the provided Docker sandbox. This keeps your host machine clean while giving the agent CLI full access to the project. Both **Gemini CLI** and **Claude Code** are supported.
 
-1. **Set your API Key** on your host machine:
+### Gemini
 
-   You must use a paid API key generated from [Google AI Studio](https://aistudio.google.com/) or [Google Cloud Vertex AI](https://cloud.google.com/vertex-ai).
+```bash
+./scripts/agentic-sandbox.sh gemini
+```
 
-   ```bash
-   export GEMINI_API_KEY="your_api_key_here"
-   ```
+*Gemini CLI starts automatically inside the container.*
 
-2. **Launch the Sandbox**:
+### Claude
 
-   ```bash
-   ./scripts/gemini-sandbox.sh
-   ```
+```bash
+./scripts/agentic-sandbox.sh claude
+```
 
-   *This script mounts your local workspace, passes your Gemini API key, and sets up host networking so the game can still reach your local Ollama instance.*
+*Claude Code starts automatically in YOLO mode (`--dangerously-skip-permissions`), which is safe inside the isolated container.*
 
-3. **Start the Agent**:
-   Once inside the container, simply run:
+### Options
 
-   ```bash
-   gemini
-   ```
+Both agents accept the following flags:
 
-   You can now ask the agent to implement features, run tests, or debug code.
+| Flag               | Description                                                |
+| ------------------ | ---------------------------------------------------------- |
+| `--rebuild-docker` | Rebuild the Docker image before launching.                 |
+| `--update`         | Update the agent CLI to the latest version before running. |
+| `-v` / `--verbose` | Enable verbose logging.                                    |
 
 ## Non-Coding Development (Content Creation)
 

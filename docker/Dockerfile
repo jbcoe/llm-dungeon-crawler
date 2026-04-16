@@ -1,59 +1,68 @@
-# Dockerfile for Ubuntu 24.04 with C++ development tools.
 FROM ubuntu:24.04
 
-# Install gcc, clang and some supporting tools for downloading/installing later tools.
+ARG AGENT=gemini
+
+# Install base tools.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cmake \
     curl \
-    g++ \
-    gdb \
     git \
-    gpg \
-    lcov \
-    llvm \
-    ninja-build \
     python-is-python3 \
     python3-pip \
     python3-venv \
-    software-properties-common \
-    ssh \
     unzip \
     wget \
 && rm -rf /var/lib/apt/lists/*
 
-# Install bazelisk.
-RUN ARCH=$(dpkg --print-architecture) && \
-    wget https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-linux-${ARCH} -O /usr/local/bin/bazelisk \
-    && chmod +x /usr/local/bin/bazelisk \
-    && ln -s /usr/local/bin/bazelisk /usr/local/bin/bazel
+# Install C++ development tools (Gemini only).
+RUN if [ "$AGENT" = "gemini" ]; then \
+    apt-get update && apt-get install -y --no-install-recommends \
+        cmake \
+        g++ \
+        gdb \
+        gpg \
+        lcov \
+        llvm \
+        ninja-build \
+        software-properties-common \
+        ssh \
+    && rm -rf /var/lib/apt/lists/*; \
+    fi
 
-# Create non-root user
+# Create non-root user.
 RUN useradd -m -s /bin/bash vscode \
     && mkdir -p /workspace \
     && chown vscode:vscode /workspace
 
-# Install Node.js (required for Gemini CLI)
+# Install Node.js (required for both Gemini CLI and Claude Code).
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Switch to non-root user
+# Switch to non-root user.
 USER vscode
 WORKDIR /workspace
 
-# Configure npm for user-local global installs
+# Configure npm for user-local global installs.
 ENV NPM_CONFIG_PREFIX=/home/vscode/.npm-global
 ENV PATH="/home/vscode/.npm-global/bin:/home/vscode/.local/bin:/usr/local/bin:${PATH}"
 RUN mkdir -p /home/vscode/.npm-global
 
-# Install Gemini CLI as the user
-RUN npm install -g @google/gemini-cli
+# Install the AI agent CLI.
+RUN if [ "$AGENT" = "gemini" ]; then \
+        npm install -g @google/gemini-cli; \
+    else \
+        npm install -g @anthropic-ai/claude-code; \
+    fi
 
-# Set up uv and Python environment
+# Set up uv and Python environment.
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV UV_PROJECT_ENVIRONMENT="/home/vscode/.venv"
 
-# Pre-configure Gemini CLI
-RUN mkdir -p /home/vscode/.gemini \
-    && echo '{"/workspace": "TRUST_FOLDER"}' > /home/vscode/.gemini/trustedFolders.json \
-    && echo '{"security": {"auth": {"selectedType": "gemini-api-key"}}}' > /home/vscode/.gemini/settings.json
+# Pre-configure Gemini CLI (Gemini only).
+RUN if [ "$AGENT" = "gemini" ]; then \
+        mkdir -p /home/vscode/.gemini \
+        && echo '{"/workspace": "TRUST_FOLDER"}' > /home/vscode/.gemini/trustedFolders.json \
+        && echo '{"selectedAuthType": "oauth-personal"}' > /home/vscode/.gemini/settings.json; \
+    fi
+
+# For Claude: ~/.claude is mounted from the host at runtime to persist auth state between sessions.
