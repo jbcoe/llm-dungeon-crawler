@@ -121,3 +121,60 @@ def test_main_with_loading_time(
         max_history=1000, model="gemma4:e4b", map_size=8, max_loading_time=3.5
     )
     mock_engine.start.assert_called_once()
+
+
+@patch(
+    "sys.argv",
+    ["dungeon-crawler", "--ollama-url", "http://34.1.2.3:11434"],
+)
+@patch("game.cli.os.environ", {})
+@patch("game.cli.AIGenerator.manage_ollama")
+@patch("game.cli.check_ollama_connection")
+@patch("game.cli.GameEngine")
+def test_main_with_ollama_url(
+    mock_engine_cls: MagicMock,
+    mock_check_conn: MagicMock,
+    mock_manage: MagicMock,
+) -> None:
+    """Ensure --ollama-url sets OLLAMA_HOST and connects to the remote server."""
+    import game.cli as cli_module
+
+    mock_engine = mock_engine_cls.return_value
+    mock_manage.return_value.__enter__.return_value = None
+
+    main()
+
+    assert cli_module.os.environ.get("OLLAMA_HOST") == "http://34.1.2.3:11434"
+    mock_manage.assert_called_once_with("gemma4:e4b")
+    mock_check_conn.assert_called_once_with("gemma4:e4b")
+    mock_engine_cls.assert_called_once_with(
+        max_history=1000, model="gemma4:e4b", map_size=8, max_loading_time=0.0
+    )
+    mock_engine.start.assert_called_once()
+
+
+@patch(
+    "sys.argv",
+    ["dungeon-crawler", "--ollama-url", "http://34.1.2.3:11434", "--model", "llama3"],
+)
+@patch("game.cli.os.environ", {})
+@patch("game.cli.AIGenerator.manage_ollama")
+@patch("game.cli.check_ollama_connection")
+@patch("game.cli.GameEngine")
+def test_main_with_ollama_url_and_model(
+    mock_engine_cls: MagicMock,
+    mock_check_conn: MagicMock,
+    mock_manage: MagicMock,
+) -> None:
+    """Ensure --ollama-url works together with a custom --model flag."""
+    import game.cli as cli_module
+
+    mock_engine = mock_engine_cls.return_value
+    mock_manage.return_value.__enter__.return_value = None
+
+    main()
+
+    assert cli_module.os.environ.get("OLLAMA_HOST") == "http://34.1.2.3:11434"
+    mock_manage.assert_called_once_with("llama3")
+    mock_check_conn.assert_called_once_with("llama3")
+    mock_engine.start.assert_called_once()
