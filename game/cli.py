@@ -3,54 +3,33 @@
 import argparse
 import sys
 
-import ollama
+from openai import OpenAI
 from rich.console import Console
 
-from game.ai import AIGenerator
+from game.ai import DEFAULT_LLAMA_SERVER_URL
 from game.engine import GameEngine
-from game.utils import get_model_name, models_match
 
 console = Console()
 
 
-def check_ollama_connection(required_model: str = "gemma4:e4b") -> None:
-    """Verify that Ollama is running and the required model is available."""
+def check_llama_server_connection(
+    server_url: str = DEFAULT_LLAMA_SERVER_URL,
+) -> None:
+    """Verify that llama-server is running and accessible."""
+    client = OpenAI(base_url=server_url.rstrip("/") + "/v1", api_key="not-needed")
     try:
-        response = ollama.list()
-        # Support both older dict responses and newer object responses
-        # from the ollama library
-        models_list = (
-            response.models
-            if hasattr(response, "models")
-            else response.get("models", [])
-        )
-
-        model_names: list[str] = [get_model_name(m) for m in models_list]
-
-        model_found = any(models_match(required_model, name) for name in model_names)
-
-        if not model_found:
-            console.print(
-                f"[bold red]ERROR: Model '{required_model}' "
-                "not found in Ollama.[/bold red]"
-            )
-            console.print(
-                f"Please run [bold]ollama pull {required_model}[/bold] "
-                "on your machine and try again."
-            )
-            sys.exit(1)
-
+        client.models.list()
     except Exception as e:
-        console.print("[bold red]ERROR: Could not connect to Ollama server.[/bold red]")
+        console.print("[bold red]ERROR: Could not connect to llama-server.[/bold red]")
         console.print(f"Details: {e}")
         console.print("\n[bold]Troubleshooting:[/bold]")
         console.print(
-            "1. Ensure Ollama is installed and running on your system "
-            "(e.g., run `ollama serve`)."
+            "1. Ensure llama-server is installed and running "
+            "(e.g., run `llama-server --model your_model.gguf`)."
         )
         console.print(
-            "2. If running inside a Docker container, ensure OLLAMA_HOST "
-            "is correctly set to point to your host machine."
+            f"2. If the server is running on a different address, use "
+            f"--server-url to specify the URL (current: {server_url})."
         )
         sys.exit(1)
 
@@ -85,8 +64,20 @@ def main() -> None:
     parser.add_argument(
         "--model",
         type=str,
-        default="gemma4:e4b",
-        help="The Ollama model to use for the game (default: gemma4:e4b)",
+        default="default",
+        help=(
+            "The model name to use in llama-server API calls (default: default). "
+            "Must match the alias set when starting llama-server."
+        ),
+    )
+    parser.add_argument(
+        "--server-url",
+        type=str,
+        default=DEFAULT_LLAMA_SERVER_URL,
+        help=(
+            f"URL of the llama-server instance (default: {DEFAULT_LLAMA_SERVER_URL}). "
+            "Set this if your server runs on a different host or port."
+        ),
     )
     parser.add_argument(
         "--size",
@@ -106,15 +97,15 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    with AIGenerator.manage_ollama(args.model):
-        check_ollama_connection(args.model)
-        engine = GameEngine(
-            max_history=args.history_length,
-            model=args.model,
-            map_size=args.size,
-            max_loading_time=args.experimental_max_loading_time,
-        )
-        engine.start()
+    check_llama_server_connection(args.server_url)
+    engine = GameEngine(
+        max_history=args.history_length,
+        model=args.model,
+        server_url=args.server_url,
+        map_size=args.size,
+        max_loading_time=args.experimental_max_loading_time,
+    )
+    engine.start()
 
 
 if __name__ == "__main__":

@@ -2,23 +2,18 @@
 
 import importlib.resources
 import logging
-import os
-import signal
-import subprocess
-import time
-import urllib.parse
-from contextlib import contextmanager
 from functools import lru_cache
-from typing import Any, Generator
+from typing import Any
 
-import ollama
-from ollama import chat, generate, ps
+from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 from game.logger import log_event
 from game.mechanics import generate_mechanics
-from game.utils import get_model_name, models_match
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_LLAMA_SERVER_URL = "http://localhost:8080"
 
 
 @lru_cache(maxsize=None)
@@ -33,114 +28,34 @@ def load_prompt(filename: str) -> str:
 class AIGenerator:
     """Handles all LLM generation logic using a specific model."""
 
-    def __init__(self, model: str = "gemma4:e4b") -> None:
-        """Initialize the AI generator with a specific model."""
+    def __init__(
+        self,
+        model: str = "default",
+        server_url: str = DEFAULT_LLAMA_SERVER_URL,
+    ) -> None:
+        """Initialize the AI generator with a specific model and server URL."""
         self.model = model
-
-    @staticmethod
-    @contextmanager
-    def manage_ollama(model: str) -> Generator[None, None, None]:
-        """
-        Manage the lifecycle of the Ollama model/server.
-
-        Ensures that the LLM (server or model) is stopped on exit if it was
-        started by the game.
-        """
-        server_was_running = True
-        try:
-            ollama.list()
-        except Exception:
-            server_was_running = False
-
-        host_env = os.environ.get("OLLAMA_HOST", "").strip()
-        is_local = True
-        if host_env:
-            if "://" not in host_env:
-                host_env = "http://" + host_env
-            parsed = urllib.parse.urlparse(host_env)
-            hostname = parsed.hostname or ""
-            if hostname not in ("127.0.0.1", "localhost", "0.0.0.0", "::1", ""):
-                is_local = False
-
-        server_process = None
-        if not server_was_running and is_local:
-            try:
-                server_process = subprocess.Popen(
-                    ["ollama", "serve"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    start_new_session=True,
-                )
-                # Wait for server to start (20s max, checking every 0.1s)
-                for _ in range(200):
-                    if server_process.poll() is not None:
-                        # Process died early (e.g. port already in use)
-                        break
-                    try:
-                        ollama.list()
-                        server_was_running = True
-                        break
-                    except Exception:
-                        time.sleep(0.1)
-            except OSError:
-                pass
-
-        # Use None to represent an unknown state
-        model_was_loaded: bool | None = None
-        if server_was_running:
-            try:
-                response = ps()
-                models_list = (
-                    getattr(response, "models", [])
-                    if hasattr(response, "models")
-                    else response.get("models", [])
-                )
-                model_was_loaded = False
-                for m in models_list:
-                    name = get_model_name(m)
-                    if models_match(model, name):
-                        model_was_loaded = True
-                        break
-            except Exception:
-                pass
-
-        try:
-            yield
-        finally:
-            if server_process:
-                try:
-                    if hasattr(os, "killpg"):
-                        os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
-                    else:
-                        server_process.terminate()
-                    server_process.wait(timeout=5)
-                except Exception:
-                    pass
-            elif model_was_loaded is False:
-                try:
-                    # Unload the model if we definitively know we started it
-                    generate(model=model, keep_alive=0)
-                except Exception:
-                    pass
+        base_url = server_url.rstrip("/") + "/v1"
+        self.client = OpenAI(base_url=base_url, api_key="not-needed")
 
     def _query_model(self, prompt: str, system_message: str | None = None) -> str:
         """Make a call to the AI model without silencing errors."""
-        messages = []
+        messages: list[ChatCompletionMessageParam] = []
         if system_message:
             messages.append({"role": "system", "content": system_message})
         messages.append({"role": "user", "content": prompt})
 
         log_event(f"API_CALL: {self.model}", prompt)
-        response = chat(
+        response = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
-            options={"temperature": 0.7},
+            temperature=0.7,
         )
-        if not response.message or not response.message.content:
+        if not response.choices or not response.choices[0].message.content:
             logger.error("AI returned an empty response.")
             raise ValueError("AI returned an empty response.")
 
-        content = response.message.content.strip()
+        content = response.choices[0].message.content.strip()
         log_event(f"API_RESPONSE: {self.model}", content)
         return content
 
