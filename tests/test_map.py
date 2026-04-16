@@ -202,7 +202,7 @@ def test_get_final_room_coord_basic() -> None:
         start = Coordinate(1, 1)
         final = m.get_final_room_coord(start)
 
-        # The furthest dead-end from (1,1) should be (1,3)
+        # Both (1,1) and (1,3) are dead-ends; only (1,3) is eligible.
         assert final is not None
         assert final == Coordinate(1, 3)
         assert final != start
@@ -233,7 +233,7 @@ def test_get_final_room_coord_no_dead_ends_returns_none() -> None:
 
 
 def test_get_final_room_coord_on_real_map() -> None:
-    """Verify get_final_room_coord works on a fully generated map."""
+    """Verify get_final_room_coord picks a valid dead-end on a real map."""
     m = Map(size=8, seed=42)
     final = m.get_final_room_coord()
 

@@ -1,7 +1,6 @@
 """Procedural map generation for the dungeon layout."""
 
 import random
-from collections import deque
 from enum import Enum
 
 import numpy as np
@@ -156,7 +155,7 @@ class Map:
         self, start: Coordinate | None = None
     ) -> Coordinate | None:
         """
-        Return the dead-end cell furthest from *start* via BFS.
+        Return a randomly chosen dead-end cell that is not *start*.
 
         The starting cell itself is excluded so the player always begins in a
         normal room.  Returns ``None`` when no suitable dead-end exists.
@@ -168,24 +167,4 @@ class Map:
         if not dead_ends:
             return None
 
-        # BFS from start to compute distances across all reachable path cells
-        distances: dict[Coordinate, int] = {start: 0}
-        queue: deque[Coordinate] = deque([start])
-        while queue:
-            current = queue.popleft()
-            for direction in Direction:
-                neighbour = current.step(direction)
-                if (
-                    0 <= neighbour.x < self.size
-                    and 0 <= neighbour.y < self.size
-                    and self.space[neighbour.x, neighbour.y]
-                    and neighbour not in distances
-                ):
-                    distances[neighbour] = distances[current] + 1
-                    queue.append(neighbour)
-
-        reachable_dead_ends = [d for d in dead_ends if d in distances]
-        if not reachable_dead_ends:
-            return None
-
-        return max(reachable_dead_ends, key=lambda c: distances[c])
+        return random.choice(dead_ends)
