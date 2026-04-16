@@ -2,11 +2,13 @@
 
 import argparse
 import sys
+from pathlib import Path
 
 import ollama
 from rich.console import Console
 
 from game.ai import AIGenerator
+from game.content import validate_content_dir
 from game.engine import GameEngine
 from game.utils import get_model_name, models_match
 
@@ -73,6 +75,14 @@ def check_map_size(value: str) -> int:
     return ivalue
 
 
+def check_content_dir(value: str) -> Path:
+    """Validate that the content directory exists."""
+    path = Path(value)
+    if not path.is_dir():
+        raise argparse.ArgumentTypeError(f"'{value}' is not an existing directory")
+    return path
+
+
 def main() -> None:
     """Parse arguments and start the game engine."""
     parser = argparse.ArgumentParser(description="LLM Dungeon Crawler")
@@ -104,7 +114,29 @@ def main() -> None:
             "room transitions (default: 0, disabled). Gives the game a retro feel."
         ),
     )
+    parser.add_argument(
+        "--content-dir",
+        type=check_content_dir,
+        default=None,
+        metavar="DIR",
+        help=(
+            "Path to a directory containing alternative theme files "
+            "(enemies.md, items.md, npcs.md, rooms.md and prompts/*.md). "
+            "Files absent from the directory fall back to built-in content."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.content_dir is not None:
+        errors = validate_content_dir(args.content_dir)
+        if errors:
+            console.print(
+                f"[bold red]ERROR: Invalid content directory "
+                f"'{args.content_dir}'[/bold red]"
+            )
+            for error in errors:
+                console.print(f"  [red]•[/red] {error}")
+            sys.exit(1)
 
     with AIGenerator.manage_ollama(args.model):
         check_ollama_connection(args.model)
@@ -113,6 +145,7 @@ def main() -> None:
             model=args.model,
             map_size=args.size,
             max_loading_time=args.experimental_max_loading_time,
+            content_dir=args.content_dir,
         )
         engine.start()
 

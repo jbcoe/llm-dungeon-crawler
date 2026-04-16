@@ -1,0 +1,23 @@
+# Room Types
+
+- Cargo Hold: Rows of magnetic shipping containers, some burst open, their contents scattered across the grated floor. Emergency lighting casts everything in red.
+- Engine Room: Colossal fusion drives hum at low power. Catwalks wind between thrumming conduits and banks of pressure gauges.
+- Medical Bay: Overturned examination tables and shattered specimen jars. Bioscanners still blink softly, reading nothing.
+- Command Bridge: Floor-to-ceiling viewscreens show a starfield tilted at a wrong angle. The captain's chair is empty.
+- Cryogenic Storage: Rows of frosted suspension pods stretch into the dark. Half are open; some still occupied.
+- Maintenance Tunnels: A labyrinth of narrow crawl-spaces lined with bundled cables and leaking coolant pipes.
+- Hydroponics Lab: Overgrown cultivation racks fill the room, plants growing wild without tending. Bioluminescent fungi have taken over one wall.
+- Server Core: A cathedral of black monoliths housing the station's computing substrate. Indicator lights pulse in slow, rhythmic waves.
+- Airlock Vestibule: A pressurized chamber between interior and vacuum. Warning strips line the inner door. A helmet floats near the ceiling.
+- Observation Deck: A curved transparent dome offering a view of the debris field outside. Stars visible through cracks in the hull.
+- Weapons Locker: Empty racks and broken security cases. Whatever was stored here was taken in a hurry.
+- Research Laboratory: Worktables covered in alien specimens inside containment fields. A mist of chemical coolant drifts at knee height.
+- Reactor Control Room: Banks of displays monitoring a core running above safe parameters. Automated warnings play in a loop.
+- Communications Array: A circular room dominated by a satellite dish mechanism frozen mid-rotation. Signal traffic is encoded and constant.
+- Xenobiology Containment: Reinforced cells designed to hold living specimens. Two are open; the third is sealed and making sounds.
+- Derelict Shuttle Bay: A cavernous hangar with one docked shuttle, its landing struts buckled, fuel lines trailing on the floor.
+- Escape Pod Corridor: A long passage lined with launch hatches. Most pods have been fired. Three remain, warning lights blinking.
+- Water Reclamation: Vast tanks of recycled water hum beneath a mesh walkway. The filtration system is backing up.
+- Waste Processing: The smell is immediate and overwhelming. Conveyors stand still; compacted refuse is piled against the walls.
+- Officer Quarters: Small, sterile cabins with personal effects still scattered. A half-eaten ration sits on one desk.
+- Zero-G Junction: A connecting hub where the gravity plating has failed. Equipment, debris, and droplets of liquid float freely.
