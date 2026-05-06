@@ -421,3 +421,179 @@ def test_map_integration(engine: GameEngine) -> None:
         # Now (1, 2) should be * and (1, 1) should be o
         assert_printed(mock_print, "[bold red]*[/bold red]")
         assert_printed(mock_print, "[bold green]o[/bold green]")
+
+
+# ---------------------------------------------------------------------------
+# Escape command tests
+# ---------------------------------------------------------------------------
+
+_MOCK_ROOM: dict[str, Any] = {
+    "room_type": {"name": "Cave", "description": "Dark cave."},
+    "exits": ["south"],
+    "items": list[dict[str, Any]](),
+    "enemies": list[dict[str, Any]](),
+    "npcs": list[dict[str, Any]](),
+}
+
+
+def test_handle_escape_no_enemies(engine: GameEngine) -> None:
+    """Escape should redirect the player to 'go' when no enemies are present."""
+    assert engine.current_room is not None
+    engine.current_room.enemies = []
+    with patch("game.engine.GameUI.print") as mock_print:
+        engine.handle_escape(["escape", "north"])
+        assert_printed(mock_print, "There are no enemies here")
+
+
+def test_handle_escape_no_direction(engine: GameEngine) -> None:
+    """Escape without a direction should prompt for one."""
+    with patch("game.engine.GameUI.print") as mock_print:
+        engine.handle_escape(["escape"])
+        assert_printed(mock_print, "Escape which direction?")
+
+
+def test_handle_escape_invalid_direction(engine: GameEngine) -> None:
+    """Escape to an exit not in the room should fail gracefully."""
+    with patch("game.engine.GameUI.print") as mock_print:
+        # Fixture room exits are ["north", "south"]; "east" is invalid
+        engine.handle_escape(["escape", "east"])
+        assert_printed(mock_print, "You cannot go 'east'.")
+
+
+def test_handle_escape_blocked_exit(engine: GameEngine) -> None:
+    """Escape through an exit blocked by an enemy should be refused."""
+    assert engine.current_room is not None
+    engine.current_room.enemies[0].blocked_exits = ["north"]
+    with patch("game.engine.GameUI.print") as mock_print:
+        engine.handle_escape(["escape", "north"])
+        assert_printed(mock_print, "is blocking the north exit")
+        # Player should not have moved
+        assert engine.floor == 1
+
+
+def test_handle_escape_no_parting_shot(engine: GameEngine) -> None:
+    """When no parting shot rolls succeed the player escapes without damage."""
+    with (
+        patch("game.engine.GameUI.print"),
+        patch("game.engine.random.random", return_value=1.0),  # No parting shot
+        patch("game.ai.generate_mechanics", return_value=_MOCK_ROOM),
+    ):
+        initial_hp = engine.player.hp
+        engine.handle_escape(["escape", "north"])
+        assert engine.player.hp == initial_hp
+        assert engine.floor == 2
+
+
+def test_handle_escape_with_parting_shot(engine: GameEngine) -> None:
+    """A successful parting-shot roll applies damage and the player still escapes."""
+    with (
+        patch("game.engine.GameUI.print") as mock_print,
+        patch("game.engine.random.random", return_value=0.0),  # Always parting shot
+        patch("game.engine.random.randint", return_value=10),  # Fixed damage = 10
+        patch("game.ai.generate_mechanics", return_value=_MOCK_ROOM),
+    ):
+        engine.handle_escape(["escape", "north"])
+        # Player (100 HP) takes 10 damage → 90 HP
+        assert engine.player.hp == 90
+        assert engine.floor == 2
+        assert_printed(mock_print, "strikes you as you flee")
+
+
+def test_handle_escape_fatal_parting_shot_drops_inventory(engine: GameEngine) -> None:
+    """Fatal parting shot: player survives with 1 HP and drops all inventory."""
+    assert engine.current_room is not None
+    engine.player.hp = 5  # Very low HP
+    sword = Item(name="Sword", description="Sharp", effect_type="weapon", stat_effect=5)
+    engine.player.inventory.append(sword)
+    enemy = engine.current_room.enemies[0]
+
+    with (
+        patch("game.engine.GameUI.print") as mock_print,
+        patch("game.engine.random.random", return_value=0.0),  # Always parting shot
+        patch("game.engine.random.randint", return_value=10),  # 10 damage > 5 HP
+        patch("game.ai.generate_mechanics", return_value=_MOCK_ROOM),
+    ):
+        engine.handle_escape(["escape", "north"])
+
+    assert engine.player.hp == 1
+    assert engine.player.inventory == []
+    assert sword in enemy.inventory
+    assert_printed(mock_print, "would have been fatal")
+
+
+def test_handle_escape_fatal_includes_equipped_weapon(engine: GameEngine) -> None:
+    """Fatal parting shot causes the player's equipped weapon to be dropped too."""
+    assert engine.current_room is not None
+    engine.player.hp = 1
+    weapon = Item(name="Axe", description="Heavy", effect_type="weapon", stat_effect=8)
+    engine.player.equipped_weapon = weapon
+    enemy = engine.current_room.enemies[0]
+
+    with (
+        patch("game.engine.GameUI.print"),
+        patch("game.engine.random.random", return_value=0.0),
+        patch("game.engine.random.randint", return_value=10),
+        patch("game.ai.generate_mechanics", return_value=_MOCK_ROOM),
+    ):
+        engine.handle_escape(["escape", "north"])
+
+    assert engine.player.equipped_weapon is None
+    assert weapon in enemy.inventory
+
+
+def test_handle_escape_no_room(engine: GameEngine) -> None:
+    """Escape should return early when there is no current room."""
+    engine.current_room = None
+    # Should not raise
+    engine.handle_escape(["escape", "north"])
+
+
+# ---------------------------------------------------------------------------
+# Enemy inventory drop on defeat
+# ---------------------------------------------------------------------------
+
+
+def test_handle_attack_drops_enemy_inventory_on_defeat(engine: GameEngine) -> None:
+    """Items held by a defeated enemy are placed into the room."""
+    assert engine.current_room is not None
+    lost_sword = Item(
+        name="Lost Sword",
+        description="A dropped weapon",
+        effect_type="weapon",
+        stat_effect=3,
+    )
+    engine.current_room.enemies[0].inventory.append(lost_sword)
+
+    with (
+        patch("game.engine.GameUI.print") as mock_print,
+        patch("game.engine.random.randint", return_value=10),  # Kill enemy (hp=10)
+    ):
+        engine.handle_attack(["attack", "goblin"])
+
+    assert len(engine.current_room.enemies) == 0
+    assert lost_sword in engine.current_room.items
+    assert_printed(mock_print, "Lost Sword")
+
+
+# ---------------------------------------------------------------------------
+# Blocked exits displayed in room description
+# ---------------------------------------------------------------------------
+
+
+def test_display_room_shows_blocked_exits(engine: GameEngine) -> None:
+    """Exits blocked by an enemy should be annotated in the room description."""
+    assert engine.current_room is not None
+    engine.current_room.enemies[0].blocked_exits = ["north"]
+
+    with patch("game.engine.GameUI.print") as mock_print:
+        engine.display_room()
+        assert_printed(mock_print, "north (blocked by Goblin)")
+
+
+def test_display_room_no_blocked_exits(engine: GameEngine) -> None:
+    """When no exits are blocked the exits line is the plain comma-separated list."""
+    assert engine.current_room is not None
+    # Goblin has no blocked_exits by default
+    with patch("game.engine.GameUI.print") as mock_print:
+        engine.display_room()
+        assert_printed(mock_print, "north, south")

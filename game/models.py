@@ -26,6 +26,8 @@ class Enemy(GameModel):
     hp: int = Field(default=10)
     max_hp: int = Field(default=10)
     attack: int = Field(default=5)
+    blocked_exits: list[str] = Field(default_factory=list)
+    inventory: list[Item] = Field(default_factory=list)
 
 
 class NPC(GameModel):

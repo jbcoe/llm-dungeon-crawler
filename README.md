@@ -40,6 +40,7 @@ Once the game starts, you interact via text commands:
 
 - **Movement:** `go north`, `go south`, `go east`, `go west`
 - **Combat:** `attack <enemy_name>`
+- **Escape:** `escape <dir>` — flee from enemies in a direction (enemies may land a parting shot; if fatal, you drop all inventory which the enemy holds until defeated)
 - **Interaction:** `talk <npc_name>`
 - **Items:** `take <item_name>`, `use <item_name>`, `equip <weapon_name>`, `unequip`
 - **Information:** `look` (describe room again), `status` or `inventory` (check health/items)

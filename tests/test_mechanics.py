@@ -96,3 +96,46 @@ def test_generate_mechanics_junk() -> None:
         assert len(mechanics["items"]) == 1
         assert mechanics["items"][0]["effect_type"] == "none"
         assert mechanics["items"][0]["stat_effect"] == 0
+
+
+@patch("game.mechanics.ENEMIES", [{"name": "Troll", "description": "Big and mean"}])
+@patch("game.mechanics.NPCS", [])
+@patch("game.mechanics.ITEMS", [])
+@patch("game.mechanics.ROOMS", [{"name": "Bridge", "description": "A stone bridge"}])
+def test_generate_mechanics_enemy_blocks_exit_three_or_more_exits() -> None:
+    """Enemy has a 50% chance to block one exit when the room has 3+ exits."""
+    exits = ["north", "south", "east"]
+    with patch("random.random", return_value=0.1):  # enemy spawns AND blocks (< 0.5)
+        mechanics = generate_mechanics(floor=1, exits=exits)
+        assert len(mechanics["enemies"]) == 1
+        enemy = mechanics["enemies"][0]
+        assert len(enemy["blocked_exits"]) == 1
+        assert enemy["blocked_exits"][0] in exits
+
+
+@patch("game.mechanics.ENEMIES", [{"name": "Troll", "description": "Big and mean"}])
+@patch("game.mechanics.NPCS", [])
+@patch("game.mechanics.ITEMS", [])
+@patch("game.mechanics.ROOMS", [{"name": "Corridor", "description": "A narrow pass"}])
+def test_generate_mechanics_enemy_does_not_block_with_two_exits() -> None:
+    """Enemy never blocks an exit when the room has fewer than 3 exits."""
+    exits = ["north", "south"]
+    with patch("random.random", return_value=0.1):  # enemy spawns, but no blocking
+        mechanics = generate_mechanics(floor=1, exits=exits)
+        assert len(mechanics["enemies"]) == 1
+        enemy = mechanics["enemies"][0]
+        assert enemy["blocked_exits"] == []
+
+
+@patch("game.mechanics.ENEMIES", [{"name": "Troll", "description": "Big and mean"}])
+@patch("game.mechanics.NPCS", [])
+@patch("game.mechanics.ITEMS", [])
+@patch("game.mechanics.ROOMS", [{"name": "Hall", "description": "A large hall"}])
+def test_generate_mechanics_enemy_skip_block_by_chance() -> None:
+    """Enemy may not block even with 3+ exits if the random roll is high enough."""
+    exits = ["north", "south", "east", "west"]
+    # enemy_chance check: 0.1 < 0.35 → True; blocking check: 0.8 >= 0.5 → False
+    with patch("random.random", side_effect=[0.1, 0.8, 0.9]):
+        mechanics = generate_mechanics(floor=1, exits=exits)
+        assert len(mechanics["enemies"]) == 1
+        assert mechanics["enemies"][0]["blocked_exits"] == []

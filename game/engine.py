@@ -12,7 +12,7 @@ from game.ai import AIGenerator
 from game.logger import log_event, setup_logger
 from game.map import Map
 from game.mechanics import ENEMIES
-from game.models import Enemy, Player, Room
+from game.models import Enemy, Item, Player, Room
 
 
 class CommandInfo(BaseModel):
@@ -65,12 +65,22 @@ COMMANDS: dict[str, CommandInfo] = {
         usage="map",
         desc="Show a map of explored rooms",
     ),
+    "escape": CommandInfo(
+        usage="escape <dir>",
+        desc=(
+            "Flee from combat in a direction"
+            " (may provoke a parting attack from enemies)"
+        ),
+    ),
 }
 
 # Enemy spawn probability when resting: starts at 20%, increases by 15% per
 # consecutive rest in the same room, capped at 95%.
 _REST_BASE_SPAWN_CHANCE = 0.20
 _REST_SPAWN_INCREMENT = 0.15
+
+# Probability that each enemy lands a parting shot when the player escapes.
+_ESCAPE_ATTACK_CHANCE = 0.50
 
 
 class GameUI:
@@ -99,7 +109,22 @@ class GameUI:
         """Print the description and contents of the current room."""
         self.print(f"\n[bold cyan]Room: {escape(room.name)}[/bold cyan]")
         self.print(f"{escape(room.description)}")
-        self.print(f"[bold yellow]Exits:[/bold yellow] {', '.join(room.exits)}")
+
+        # Show exits, marking any that are blocked by enemies
+        blocked_by: dict[str, str] = {}
+        for enemy in room.enemies:
+            for ex in enemy.blocked_exits:
+                blocked_by[ex] = enemy.name
+        if blocked_by:
+            exit_parts = [
+                f"{ex} (blocked by {escape(blocked_by[ex])})"
+                if ex in blocked_by
+                else ex
+                for ex in room.exits
+            ]
+            self.print(f"[bold yellow]Exits:[/bold yellow] {', '.join(exit_parts)}")
+        else:
+            self.print(f"[bold yellow]Exits:[/bold yellow] {', '.join(room.exits)}")
 
         if room.items:
             for item in room.items:
@@ -386,6 +411,8 @@ class GameEngine:
                 self.ui.display_status(self.player)
             elif action == "go":
                 self.handle_go(parts)
+            elif action == "escape":
+                self.handle_escape(parts)
             elif action == "attack":
                 self.handle_attack(parts)
             elif action == "talk":
@@ -426,7 +453,10 @@ class GameEngine:
             direction = parts[1]
             if direction in self.current_room.exits:
                 if self.current_room.enemies:
-                    self.ui.print_error("You can't leave while there are enemies here!")
+                    self.ui.print_error(
+                        "You can't leave while there are enemies here! "
+                        "Use 'escape <dir>' to flee."
+                    )
                 else:
                     self.enter_new_room(direction)
                     self.floor += 1
@@ -434,6 +464,84 @@ class GameEngine:
                 self.ui.print(f"You cannot go '{direction}'.")
         else:
             self.ui.print("Go where?")
+
+    def handle_escape(self, parts: list[str]) -> None:
+        """Handle the escape command - attempt to flee from enemies."""
+        if not self.current_room:
+            return
+
+        if not self.current_room.enemies:
+            self.ui.print("There are no enemies here. Use 'go' to move normally.")
+            return
+
+        if len(parts) < 2:
+            self.ui.print("Escape which direction?")
+            return
+
+        direction = parts[1]
+
+        if direction not in self.current_room.exits:
+            self.ui.print(f"You cannot go '{direction}'.")
+            return
+
+        # Check whether any enemy is blocking this exit
+        blockers = [
+            e for e in self.current_room.enemies if direction in e.blocked_exits
+        ]
+        if blockers:
+            self.ui.print_error(
+                f"{blockers[0].name} is blocking the {direction} exit. "
+                "You cannot escape that way!"
+            )
+            return
+
+        # Each enemy has a chance to land a parting shot
+        total_damage = 0
+        for enemy in self.current_room.enemies:
+            if random.random() < _ESCAPE_ATTACK_CHANCE:
+                damage = self._roll_damage(enemy.attack)
+                total_damage += damage
+                self.ui.print(
+                    f"{enemy.name} strikes you as you flee for {damage} damage!"
+                )
+
+        # If parting shots would be fatal, player survives by dropping all inventory
+        if total_damage >= self.player.hp:
+            dropped: list[Item] = []
+            if self.player.equipped_weapon:
+                dropped.append(self.player.equipped_weapon)
+                self.player.equipped_weapon = None
+            dropped.extend(self.player.inventory)
+            self.player.inventory.clear()
+
+            if dropped and self.current_room.enemies:
+                captor = self.current_room.enemies[0]
+                captor.inventory.extend(dropped)
+                item_names = ", ".join(i.name for i in dropped)
+                self.ui.print_error(
+                    "The attack would have been fatal! "
+                    "You drop everything and barely escape with your life!"
+                )
+                self.ui.print(
+                    f"{captor.name} grabs your belongings: {item_names}. "
+                    "Defeat them to recover your items!"
+                )
+            else:
+                self.ui.print_error(
+                    "The attack would have been fatal! You barely escape!"
+                )
+
+            self.player.hp = 1
+        else:
+            self.player.take_damage(total_damage)
+            if total_damage > 0:
+                self.ui.print(
+                    f"You took {total_damage} damage escaping! "
+                    f"HP: {self.player.hp}/{self.player.max_hp}"
+                )
+
+        self.enter_new_room(direction)
+        self.floor += 1
 
     @staticmethod
     def _roll_damage(base: int) -> int:
@@ -488,6 +596,10 @@ class GameEngine:
             self.ui.print(f"{enemy.name} attacks you for {enemy_damage} damage!")
         else:
             self.ui.print(f"You defeated {enemy.name}!", style="bold red")
+            if enemy.inventory:
+                self.current_room.items.extend(enemy.inventory)
+                item_names = ", ".join(i.name for i in enemy.inventory)
+                self.ui.print(f"{enemy.name} drops: {item_names}")
             self.current_room.enemies.remove(enemy)
 
         # Narrative
