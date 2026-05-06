@@ -1,54 +1,84 @@
 """Unit tests for mechanics.py."""
 
+from pathlib import Path
 from unittest.mock import patch
 
-from game.mechanics import generate_mechanics, load_data
+import pytest
+
+from game.mechanics import generate_mechanics
+from game.theme import Theme
 
 
-def test_load_data_success() -> None:
-    """Verify correctly formatted markdown lists are parsed into dicts."""
-    mock_file_content = "- Item One: A test item\n- Item Two: Another item"
+@pytest.fixture
+def theme(tmp_path: Path) -> Theme:
+    """Fixture to create a minimal valid theme for testing."""
+    theme_path = tmp_path / "test-theme"
+    theme_path.mkdir()
 
-    # We patch importlib.resources.files to return a mock Traversable
-    with patch("importlib.resources.files") as mock_files:
-        mock_joinpath = mock_files.return_value.joinpath.return_value
-        mock_joinpath.is_file.return_value = True
-        mock_joinpath.read_text.return_value = mock_file_content
+    for f in ["enemies.md", "items.md", "npcs.md", "rooms.md"]:
+        (theme_path / f).write_text("- Name: Desc\n")
 
-        result = load_data("test.md")
+    prompts_dir = theme_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "combat.md").write_text(
+        "{player_action}{enemy_name}{damage_dealt}{enemy_hp}{player_hp}"
+    )
+    (prompts_dir / "intro.md").write_text("Test Intro Prompt")
+    (prompts_dir / "item_use.md").write_text(
+        "{item_name}{item_description}{room_context}"
+    )
+    (prompts_dir / "npc.md").write_text(
+        "{npc_name}{npc_context}{history}{player_message}"
+    )
+    (prompts_dir / "rest.md").write_text("{player_hp}{player_max_hp}")
+    (prompts_dir / "room.md").write_text(
+        "{previous_context}{room_type_name}{room_type_desc}"
+        "{exits_str}{enemies_str}{npcs_str}{items_str}"
+    )
 
-        assert len(result) == 2
-        assert result[0] == {"name": "Item One", "description": "A test item"}
-        assert result[1] == {"name": "Item Two", "description": "Another item"}
+    return Theme.from_path(theme_path)
 
 
-def test_load_data_file_not_found() -> None:
-    """Ensure missing data files trigger logging explicitly and return empty list."""
-    with patch("importlib.resources.files") as mock_files:
-        mock_joinpath = mock_files.return_value.joinpath.return_value
-        mock_joinpath.is_file.return_value = False
-
-        result = load_data("missing.md")
-        assert result == []
-
-
-def test_generate_mechanics_empty_exits() -> None:
+def test_generate_mechanics_empty_exits(theme: Theme) -> None:
     """Verify that an empty list of exits is treated as None."""
     # When exits=[], it should generate random exits
-    mechanics = generate_mechanics(floor=1, exits=[])
+    mechanics = generate_mechanics(floor=1, exits=[], theme=theme)
     assert len(mechanics["exits"]) > 0
     assert all(e in ["north", "south", "east", "west"] for e in mechanics["exits"])
 
 
-@patch("game.mechanics.ENEMIES", [{"name": "Goblin", "description": "Ugly"}])
-@patch("game.mechanics.NPCS", [{"name": "Merchant", "description": "Sells"}])
-@patch("game.mechanics.ITEMS", [{"name": "Health Potion", "description": "Heals"}])
-@patch("game.mechanics.ROOMS", [{"name": "Cave", "description": "Dark"}])
-def test_generate_mechanics() -> None:
+def test_generate_mechanics(tmp_path: Path) -> None:
     """Validate procedural room generation structure and probabilities."""
+    theme_path = tmp_path / "test-theme"
+    theme_path.mkdir()
+    (theme_path / "enemies.md").write_text("- Goblin: Ugly\n")
+    (theme_path / "npcs.md").write_text("- Merchant: Sells\n")
+    (theme_path / "items.md").write_text("- Health Potion: Heals\n")
+    (theme_path / "rooms.md").write_text("- Cave: Dark\n")
+
+    prompts_dir = theme_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "combat.md").write_text(
+        "{player_action}{enemy_name}{damage_dealt}{enemy_hp}{player_hp}"
+    )
+    (prompts_dir / "intro.md").write_text("Test Intro Prompt")
+    (prompts_dir / "item_use.md").write_text(
+        "{item_name}{item_description}{room_context}"
+    )
+    (prompts_dir / "npc.md").write_text(
+        "{npc_name}{npc_context}{history}{player_message}"
+    )
+    (prompts_dir / "rest.md").write_text("{player_hp}{player_max_hp}")
+    (prompts_dir / "room.md").write_text(
+        "{previous_context}{room_type_name}{room_type_desc}"
+        "{exits_str}{enemies_str}{npcs_str}{items_str}"
+    )
+
+    theme = Theme.from_path(theme_path)
+
     # Test generation and make sure we get the expected types and structure.
     with patch("random.random", return_value=0.1):  # force items and enemies to spawn
-        mechanics = generate_mechanics(floor=1)
+        mechanics = generate_mechanics(floor=1, theme=theme)
 
         assert mechanics["room_type"] == {"name": "Cave", "description": "Dark"}
         assert len(mechanics["enemies"]) == 1
@@ -59,40 +89,91 @@ def test_generate_mechanics() -> None:
         assert mechanics["items"][0]["effect_type"] == "healing"
 
     with patch("random.random", return_value=0.1):  # force npcs to spawn
-        with patch("game.mechanics.ENEMIES", []):  # disable enemies so NPC can spawn
-            mechanics = generate_mechanics(floor=1)
-            assert len(mechanics["enemies"]) == 0
-            assert len(mechanics["npcs"]) == 1
-            assert mechanics["npcs"][0]["name"] == "Merchant"
+        # Re-load theme with no enemies to test NPC spawning
+        (theme_path / "enemies.md").write_text("")
+        theme = Theme.from_path(theme_path)
+        mechanics = generate_mechanics(floor=1, theme=theme)
+        assert len(mechanics["enemies"]) == 0
+        assert len(mechanics["npcs"]) == 1
+        assert mechanics["npcs"][0]["name"] == "Merchant"
 
     with patch("random.random", return_value=0.9):  # force nothing to spawn
-        mechanics = generate_mechanics(floor=1)
+        # Restore enemies file and re-load
+        (theme_path / "enemies.md").write_text("- Goblin: Ugly\n")
+        theme = Theme.from_path(theme_path)
+        mechanics = generate_mechanics(floor=1, theme=theme)
         assert len(mechanics["enemies"]) == 0
         assert len(mechanics["npcs"]) == 0
         assert len(mechanics["items"]) == 0
 
 
-@patch("game.mechanics.ENEMIES", [])
-@patch("game.mechanics.NPCS", [])
-@patch("game.mechanics.ITEMS", [{"name": "Iron Sword", "description": "Sharp"}])
-@patch("game.mechanics.ROOMS", [])
-def test_generate_mechanics_weapons() -> None:
+def test_generate_mechanics_weapons(tmp_path: Path) -> None:
     """Ensure weapons generated procedurally have valid weapon effects."""
+    theme_path = tmp_path / "test-theme"
+    theme_path.mkdir()
+    (theme_path / "enemies.md").write_text("- Enemy: Desc\n")
+    (theme_path / "npcs.md").write_text("- NPC: Desc\n")
+    (theme_path / "items.md").write_text("- Iron Sword: Sharp\n")
+    (theme_path / "rooms.md").write_text("- Room: Desc\n")
+
+    prompts_dir = theme_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "combat.md").write_text(
+        "{player_action}{enemy_name}{damage_dealt}{enemy_hp}{player_hp}"
+    )
+    (prompts_dir / "intro.md").write_text("Test Intro Prompt")
+    (prompts_dir / "item_use.md").write_text(
+        "{item_name}{item_description}{room_context}"
+    )
+    (prompts_dir / "npc.md").write_text(
+        "{npc_name}{npc_context}{history}{player_message}"
+    )
+    (prompts_dir / "rest.md").write_text("{player_hp}{player_max_hp}")
+    (prompts_dir / "room.md").write_text(
+        "{previous_context}{room_type_name}{room_type_desc}"
+        "{exits_str}{enemies_str}{npcs_str}{items_str}"
+    )
+
+    theme = Theme.from_path(theme_path)
+
     with patch("random.random", return_value=0.1):  # item will spawn
-        mechanics = generate_mechanics(floor=2)
+        mechanics = generate_mechanics(floor=2, theme=theme)
         assert len(mechanics["items"]) == 1
         assert mechanics["items"][0]["effect_type"] == "weapon"
         assert mechanics["items"][0]["stat_effect"] > 0
 
 
-@patch("game.mechanics.ENEMIES", [])
-@patch("game.mechanics.NPCS", [])
-@patch("game.mechanics.ITEMS", [{"name": "Random Junk", "description": "Junk"}])
-@patch("game.mechanics.ROOMS", [])
-def test_generate_mechanics_junk() -> None:
+def test_generate_mechanics_junk(tmp_path: Path) -> None:
     """Verify random flavor items lack mechanical combat properties."""
+    theme_path = tmp_path / "test-theme"
+    theme_path.mkdir()
+    (theme_path / "enemies.md").write_text("- Enemy: Desc\n")
+    (theme_path / "npcs.md").write_text("- NPC: Desc\n")
+    (theme_path / "items.md").write_text("- Random Junk: Junk\n")
+    (theme_path / "rooms.md").write_text("- Room: Desc\n")
+
+    prompts_dir = theme_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "combat.md").write_text(
+        "{player_action}{enemy_name}{damage_dealt}{enemy_hp}{player_hp}"
+    )
+    (prompts_dir / "intro.md").write_text("Test Intro Prompt")
+    (prompts_dir / "item_use.md").write_text(
+        "{item_name}{item_description}{room_context}"
+    )
+    (prompts_dir / "npc.md").write_text(
+        "{npc_name}{npc_context}{history}{player_message}"
+    )
+    (prompts_dir / "rest.md").write_text("{player_hp}{player_max_hp}")
+    (prompts_dir / "room.md").write_text(
+        "{previous_context}{room_type_name}{room_type_desc}"
+        "{exits_str}{enemies_str}{npcs_str}{items_str}"
+    )
+
+    theme = Theme.from_path(theme_path)
+
     with patch("random.random", return_value=0.1):  # item will spawn
-        mechanics = generate_mechanics(floor=2)
+        mechanics = generate_mechanics(floor=2, theme=theme)
         assert len(mechanics["items"]) == 1
         assert mechanics["items"][0]["effect_type"] == "none"
         assert mechanics["items"][0]["stat_effect"] == 0

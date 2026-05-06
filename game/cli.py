@@ -2,12 +2,14 @@
 
 import argparse
 import sys
+from pathlib import Path
 
 import ollama
 from rich.console import Console
 
 from game.ai import AIGenerator
 from game.engine import GameEngine
+from game.theme import Theme
 from game.utils import get_model_name, models_match
 
 console = Console()
@@ -73,6 +75,23 @@ def check_map_size(value: str) -> int:
     return ivalue
 
 
+def check_theme(value: str) -> Path:
+    """Validate that the theme exists in the themes directory."""
+    # Try current working directory first (prioritizes local/custom themes)
+    path = Path("themes") / value
+    if path.is_dir():
+        return path.absolute()
+
+    # Try relative to the package (finds bundled themes when installed)
+    pkg_themes = Path(__file__).parent.parent / "themes" / value
+    if pkg_themes.is_dir():
+        return pkg_themes.absolute()
+
+    raise argparse.ArgumentTypeError(
+        f"Theme '{value}' not found in themes/ directory (checked CWD and package root)"
+    )
+
+
 def main() -> None:
     """Parse arguments and start the game engine."""
     parser = argparse.ArgumentParser(description="LLM Dungeon Crawler")
@@ -104,7 +123,26 @@ def main() -> None:
             "room transitions (default: 0, disabled). Gives the game a retro feel."
         ),
     )
+    parser.add_argument(
+        "--theme",
+        type=check_theme,
+        default="dark-fantasy",
+        metavar="NAME",
+        help=(
+            "Name of the theme to use (e.g., 'dark-fantasy', 'scifi'). "
+            "Must correspond to a directory in themes/. "
+            "Defaults to 'dark-fantasy'."
+        ),
+    )
     args = parser.parse_args()
+
+    try:
+        theme = Theme.from_path(args.theme)
+    except ValueError as e:
+        console.print(f"[bold red]ERROR: Invalid theme '{args.theme.name}'[/bold red]")
+        for error in str(e).split("\n"):
+            console.print(f"  [red]•[/red] {error}")
+        sys.exit(1)
 
     with AIGenerator.manage_ollama(args.model):
         check_ollama_connection(args.model)
@@ -113,6 +151,7 @@ def main() -> None:
             model=args.model,
             map_size=args.size,
             max_loading_time=args.experimental_max_loading_time,
+            theme=theme,
         )
         engine.start()
 

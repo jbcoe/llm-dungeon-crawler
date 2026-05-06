@@ -1,15 +1,53 @@
 """Tests for the game engine logic."""
 
+from pathlib import Path
 from typing import Any
 from unittest.mock import call, patch
 
+import pytest
+
 from game.engine import GameEngine, GameUI
 from game.models import NPC, Enemy, Item, Room
+from game.theme import Theme
 
 
-def test_engine_initialization(fake_ai: Any) -> None:
+@pytest.fixture
+def theme(tmp_path: Path) -> Theme:
+    """Fixture to create a minimal valid theme for testing."""
+    theme_path = tmp_path / "test-theme"
+    theme_path.mkdir()
+
+    for f in ["enemies.md", "items.md", "npcs.md", "rooms.md"]:
+        (theme_path / f).write_text("- Name: Desc\n")
+
+    prompts_dir = theme_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "combat.md").write_text(
+        "{player_action}{enemy_name}{damage_dealt}{enemy_hp}{player_hp}"
+    )
+    (prompts_dir / "intro.md").write_text("Test Intro Prompt")
+    (prompts_dir / "item_use.md").write_text(
+        "{item_name}{item_description}{room_context}"
+    )
+    (prompts_dir / "npc.md").write_text(
+        "{npc_name}{npc_context}{history}{player_message}"
+    )
+    (prompts_dir / "rest.md").write_text("{player_hp}{player_max_hp}")
+    (prompts_dir / "room.md").write_text(
+        "{previous_context}{room_type_name}{room_type_desc}"
+        "{exits_str}{enemies_str}{npcs_str}{items_str}"
+    )
+
+    return Theme.from_path(theme_path)
+
+
+def test_engine_initialization(fake_ai: Any, theme: Theme) -> None:
     """Test that the engine initializes with correct player state."""
-    engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai)
+    engine = GameEngine(
+        theme=theme,
+        mock_input=["quit"],
+        ai_generator=fake_ai,
+    )
     engine.start()
 
     assert engine.player.hp == 100
@@ -20,9 +58,13 @@ def test_engine_initialization(fake_ai: Any) -> None:
     assert len(engine.current_room.exits) > 0
 
 
-def test_combat(fake_ai: Any) -> None:
+def test_combat(fake_ai: Any, theme: Theme) -> None:
     """Test combat mechanics and enemy death."""
-    engine = GameEngine(mock_input=["attack slime", "quit"], ai_generator=fake_ai)
+    engine = GameEngine(
+        theme=theme,
+        mock_input=["attack slime", "quit"],
+        ai_generator=fake_ai,
+    )
     room = Room(
         name="Test Room",
         description="Test",
@@ -47,10 +89,12 @@ def test_combat(fake_ai: Any) -> None:
     assert engine.player.hp == 100
 
 
-def test_talk(fake_ai: Any) -> None:
+def test_talk(fake_ai: Any, theme: Theme) -> None:
     """Test NPC interaction and dialogue."""
     engine = GameEngine(
-        mock_input=["talk merchant", "hello", "bye", "quit"], ai_generator=fake_ai
+        theme=theme,
+        mock_input=["talk merchant", "hello", "bye", "quit"],
+        ai_generator=fake_ai,
     )
     room = Room(
         name="Test Room",
@@ -68,9 +112,13 @@ def test_talk(fake_ai: Any) -> None:
     engine.game_loop()
 
 
-def test_autocompletion_options(fake_ai: Any) -> None:
+def test_autocompletion_options(fake_ai: Any, theme: Theme) -> None:
     """Test that autocompletion returns expected command and entity words."""
-    engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai)
+    engine = GameEngine(
+        theme=theme,
+        mock_input=["quit"],
+        ai_generator=fake_ai,
+    )
     room = Room(
         name="Test Room",
         description="Test Room",
@@ -114,10 +162,12 @@ def test_autocompletion_options(fake_ai: Any) -> None:
     assert "sword" in options
 
 
-def test_history_tracking(fake_ai: Any) -> None:
+def test_history_tracking(fake_ai: Any, theme: Theme) -> None:
     """Test that player commands are correctly tracked in history."""
     engine = GameEngine(
-        mock_input=["look", "go north", "inventory", "quit"], ai_generator=fake_ai
+        theme=theme,
+        mock_input=["look", "go north", "inventory", "quit"],
+        ai_generator=fake_ai,
     )
     engine.current_room = Room(name="Test Room", description="Test", exits=["north"])
     # Mock enter_new_room so it doesn't try to generate a real room when moving
@@ -127,10 +177,13 @@ def test_history_tracking(fake_ai: Any) -> None:
     assert engine.history == ["look", "go north", "inventory", "quit"]
 
 
-def test_history_truncation(fake_ai: Any) -> None:
+def test_history_truncation(fake_ai: Any, theme: Theme) -> None:
     """Test that command history is truncated according to max_history."""
     engine = GameEngine(
-        mock_input=["look", "look", "look", "quit"], max_history=2, ai_generator=fake_ai
+        theme=theme,
+        mock_input=["look", "look", "look", "quit"],
+        max_history=2,
+        ai_generator=fake_ai,
     )
     engine.current_room = Room(name="Test Room", description="Test", exits=["north"])
     engine.game_loop()
@@ -138,9 +191,13 @@ def test_history_truncation(fake_ai: Any) -> None:
     assert engine.history == ["look", "quit"]
 
 
-def test_loading_bar_disabled_by_default(fake_ai: Any) -> None:
+def test_loading_bar_disabled_by_default(fake_ai: Any, theme: Theme) -> None:
     """Test that no loading bar is shown when max_loading_time is 0."""
-    engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai)
+    engine = GameEngine(
+        theme=theme,
+        mock_input=["quit"],
+        ai_generator=fake_ai,
+    )
     assert engine.max_loading_time == 0.0
 
     with patch.object(engine.ui, "show_loading_bar") as mock_loading:
@@ -149,9 +206,14 @@ def test_loading_bar_disabled_by_default(fake_ai: Any) -> None:
     mock_loading.assert_not_called()
 
 
-def test_loading_bar_shown_on_room_transition(fake_ai: Any) -> None:
+def test_loading_bar_shown_on_room_transition(fake_ai: Any, theme: Theme) -> None:
     """Test that loading bar is triggered on room transitions when enabled."""
-    engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai, max_loading_time=5.0)
+    engine = GameEngine(
+        theme=theme,
+        mock_input=["quit"],
+        ai_generator=fake_ai,
+        max_loading_time=5.0,
+    )
     assert engine.max_loading_time == 5.0
 
     with patch.object(engine.ui, "show_loading_bar") as mock_loading:
@@ -161,10 +223,13 @@ def test_loading_bar_shown_on_room_transition(fake_ai: Any) -> None:
     mock_loading.assert_called_once_with(2.5)
 
 
-def test_loading_bar_uses_random_duration(fake_ai: Any) -> None:
+def test_loading_bar_uses_random_duration(fake_ai: Any, theme: Theme) -> None:
     """Test that loading duration is drawn from [0, max_loading_time]."""
     engine = GameEngine(
-        mock_input=["quit"], ai_generator=fake_ai, max_loading_time=10.0
+        theme=theme,
+        mock_input=["quit"],
+        ai_generator=fake_ai,
+        max_loading_time=10.0,
     )
     engine.current_room = Room(name="Start", description="Start room", exits=["north"])
     engine.grid[(1, 1)] = engine.current_room

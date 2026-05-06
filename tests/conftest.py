@@ -1,17 +1,23 @@
 """Shared test fixtures for the game."""
 
+from pathlib import Path
+
 import pytest
 
 from game.ai import AIGenerator
 from game.logger import log_event
+from game.theme import Theme
 
 
 class FakeAIGenerator(AIGenerator):
     """Test double for AIGenerator to bypass network calls."""
 
-    def __init__(self) -> None:
+    def __init__(self, theme: Theme | None = None) -> None:
         """Initialize the fake AI generator."""
-        super().__init__(model="test-model")
+        super().__init__(
+            model="test-model",
+            theme=theme or Theme.from_path(Path("themes/dark-fantasy")),
+        )
 
     def _query_model(self, prompt: str, system_message: str | None = None) -> str:
         log_event(f"API_CALL: {self.model}", prompt)

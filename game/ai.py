@@ -1,6 +1,5 @@
 """AI-powered narration and response generation."""
 
-import importlib.resources
 import logging
 import os
 import signal
@@ -8,7 +7,6 @@ import subprocess
 import time
 import urllib.parse
 from contextlib import contextmanager
-from functools import lru_cache
 from typing import Any, Generator
 
 import ollama
@@ -16,26 +14,19 @@ from ollama import chat, generate, ps
 
 from game.logger import log_event
 from game.mechanics import generate_mechanics
+from game.theme import Theme
 from game.utils import get_model_name, models_match
 
 logger = logging.getLogger(__name__)
 
 
-@lru_cache(maxsize=None)
-def load_prompt(filename: str) -> str:
-    """Load a prompt template from a markdown file in the data directory."""
-    filepath = importlib.resources.files("game.data.prompts").joinpath(filename)
-    if not filepath.is_file():
-        raise FileNotFoundError(f"Missing expected prompt file: {filename}")
-    return filepath.read_text(encoding="utf-8")
-
-
 class AIGenerator:
     """Handles all LLM generation logic using a specific model."""
 
-    def __init__(self, model: str = "gemma4:e4b") -> None:
-        """Initialize the AI generator with a specific model."""
+    def __init__(self, model: str, theme: Theme) -> None:
+        """Initialize with a specific model and mandatory theme."""
         self.model = model
+        self.theme = theme
 
     @staticmethod
     @contextmanager
@@ -151,7 +142,7 @@ class AIGenerator:
         exits: list[str] | None = None,
     ) -> dict[str, Any]:
         """Generate a room description using AI based on current mechanics."""
-        mechanics = generate_mechanics(floor, exits=exits)
+        mechanics = generate_mechanics(floor, exits=exits, theme=self.theme)
 
         # Format lists for the prompt
         room_type_name = mechanics["room_type"]["name"]
@@ -173,7 +164,7 @@ class AIGenerator:
             else "None"
         )
 
-        template = load_prompt("room.md")
+        template = self.theme.room_prompt
         prompt = template.format(
             previous_context=previous_context,
             room_type_name=room_type_name,
@@ -194,7 +185,7 @@ class AIGenerator:
         self, item_name: str, item_description: str, room_context: str
     ) -> str:
         """Generate narrative text for using an item."""
-        template = load_prompt("item_use.md")
+        template = self.theme.item_use_prompt
         prompt = template.format(
             item_name=item_name,
             item_description=item_description,
@@ -206,7 +197,7 @@ class AIGenerator:
         self, npc_name: str, npc_context: str, player_message: str, history: str = ""
     ) -> str:
         """Generate a dialogue response from an NPC."""
-        template = load_prompt("npc.md")
+        template = self.theme.npc_prompt
         prompt = template.format(
             npc_name=npc_name,
             npc_context=npc_context,
@@ -224,7 +215,7 @@ class AIGenerator:
         damage_dealt: int,
     ) -> str:
         """Generate visceral narration for a combat exchange."""
-        template = load_prompt("combat.md")
+        template = self.theme.combat_prompt
         prompt = template.format(
             player_action=player_action,
             enemy_name=enemy_name,
@@ -236,12 +227,12 @@ class AIGenerator:
 
     def generate_intro(self) -> str:
         """Generate a haunting introduction for the game session."""
-        prompt = load_prompt("intro.md")
+        prompt = self.theme.intro_prompt
         return self._query_model(prompt)
 
     def narrate_rest(self, player_hp: int, player_max_hp: int) -> str:
         """Generate narrative text for the player resting."""
-        template = load_prompt("rest.md")
+        template = self.theme.rest_prompt
         prompt = template.format(
             player_hp=player_hp,
             player_max_hp=player_max_hp,
