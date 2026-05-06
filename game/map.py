@@ -141,3 +141,30 @@ class Map:
             if 0 <= nx < self.size and 0 <= ny < self.size and self.space[nx, ny]:
                 exits.append(direction.name.lower())
         return exits
+
+    def find_dead_ends(self) -> list[Coordinate]:
+        """Return all path cells that have exactly one neighbouring path cell."""
+        dead_ends: list[Coordinate] = []
+        for x in range(self.size):
+            for y in range(self.size):
+                if self.space[x, y] and len(self.get_exits(x, y)) == 1:
+                    dead_ends.append(Coordinate(x, y))
+        return dead_ends
+
+    def get_final_room_coord(
+        self, start: Coordinate | None = None
+    ) -> Coordinate | None:
+        """
+        Return a randomly chosen dead-end cell that is not *start*.
+
+        The starting cell itself is excluded so the player always begins in a
+        normal room.  Returns ``None`` when no suitable dead-end exists.
+        """
+        if start is None:
+            start = Coordinate(1, 1)
+
+        dead_ends = [d for d in self.find_dead_ends() if d != start]
+        if not dead_ends:
+            return None
+
+        return random.choice(dead_ends)

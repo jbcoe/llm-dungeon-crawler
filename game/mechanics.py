@@ -34,6 +34,7 @@ ENEMIES = load_data("enemies.md")
 ITEMS = load_data("items.md")
 NPCS = load_data("npcs.md")
 ROOMS = load_data("rooms.md")
+BOSSES = load_data("bosses.md")
 
 
 def _get_item_mechanics(item_data: dict[str, str], floor: int) -> dict[str, Any]:
@@ -132,4 +133,92 @@ def generate_mechanics(
         "items": room_items,
         "enemies": room_enemies,
         "npcs": room_npcs,
+    }
+
+
+# Room types reserved for the final boss encounter.
+_FINAL_ROOM_TYPES: list[dict[str, str]] = [
+    {
+        "name": "Throne of Bones",
+        "description": (
+            "A cavernous hall where a throne of bleached skulls towers over a "
+            "sea of shattered weapons and rusted armour."
+        ),
+    },
+    {
+        "name": "Sanctum of the Abyss",
+        "description": (
+            "A vast circular chamber ringed by floating obsidian pillars, where "
+            "a portal to the void pulses with malevolent energy."
+        ),
+    },
+    {
+        "name": "Heart of Darkness",
+        "description": (
+            "The dungeon's innermost sanctum, where the walls bleed shadow and "
+            "the air hums with ancient, terrible power."
+        ),
+    },
+    {
+        "name": "The Black Altar",
+        "description": (
+            "A temple of dark stone dominated by an enormous altar stained with "
+            "centuries of sacrificial offerings to a nameless god."
+        ),
+    },
+    {
+        "name": "Wyrm's Lair",
+        "description": (
+            "An immense cavern littered with the treasure and bones of countless "
+            "adventurers who came before, and failed."
+        ),
+    },
+]
+
+
+def generate_final_room_mechanics(
+    floor: int,
+    exits: list[str] | None = None,
+) -> dict[str, Any]:
+    """Generate the mechanical components of the final boss room."""
+    if exits is None:
+        exits = []
+
+    room_type = random.choice(_FINAL_ROOM_TYPES)
+
+    boss_data = (
+        random.choice(BOSSES)
+        if BOSSES
+        else {
+            "name": "The Dark Lord",
+            "description": "An ancient evil of immeasurable power.",
+        }
+    )
+
+    # Boss stats scale steeply with floor depth
+    hp = 80 + floor * 20
+    attack = 15 + floor * 5
+
+    boss: dict[str, Any] = {
+        "name": boss_data["name"],
+        "description": boss_data["description"],
+        "hp": hp,
+        "max_hp": hp,
+        "attack": attack,
+        "is_boss": True,
+    }
+
+    # Guarantee at least one item as a reward for reaching the final room
+    room_items: list[dict[str, Any]] = []
+    if ITEMS:
+        item_data = random.choice(ITEMS)
+        room_items.append(_get_item_mechanics(item_data, floor))
+
+    return {
+        "room_type": room_type,
+        "exits": exits,
+        "items": room_items,
+        "enemies": [boss],
+        "npcs": [],
+        "is_final_room": True,
     }

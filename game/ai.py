@@ -15,7 +15,7 @@ import ollama
 from ollama import chat, generate, ps
 
 from game.logger import log_event
-from game.mechanics import generate_mechanics
+from game.mechanics import generate_final_room_mechanics, generate_mechanics
 from game.utils import get_model_name, models_match
 
 logger = logging.getLogger(__name__)
@@ -181,6 +181,42 @@ class AIGenerator:
             exits_str=exits_str,
             enemies_str=enemies_str,
             npcs_str=npcs_str,
+            items_str=items_str,
+        )
+
+        description = self._query_model(prompt)
+        mechanics["description"] = description
+        mechanics["name"] = room_type_name
+
+        return mechanics
+
+    def generate_final_room(
+        self,
+        floor: int,
+        previous_context: str = "",
+        exits: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Generate the final boss room description using AI."""
+        mechanics = generate_final_room_mechanics(floor, exits=exits)
+
+        room_type_name = mechanics["room_type"]["name"]
+        room_type_desc = mechanics["room_type"]["description"]
+        boss = mechanics["enemies"][0]
+        boss_name = boss["name"]
+        boss_description = boss["description"]
+        items_str = (
+            ", ".join([i["name"] for i in mechanics["items"]])
+            if mechanics["items"]
+            else "None"
+        )
+
+        template = load_prompt("final_room.md")
+        prompt = template.format(
+            previous_context=previous_context,
+            room_type_name=room_type_name,
+            room_type_desc=room_type_desc,
+            boss_name=boss_name,
+            boss_description=boss_description,
             items_str=items_str,
         )
 

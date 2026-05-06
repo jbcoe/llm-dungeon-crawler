@@ -26,6 +26,7 @@ class Enemy(GameModel):
     hp: int = Field(default=10)
     max_hp: int = Field(default=10)
     attack: int = Field(default=5)
+    is_boss: bool = Field(default=False)
 
 
 class NPC(GameModel):
@@ -45,6 +46,7 @@ class Room(GameModel):
     items: list[Item] = Field(default_factory=list)
     enemies: list[Enemy] = Field(default_factory=list)
     npcs: list[NPC] = Field(default_factory=list)
+    is_final_room: bool = Field(default=False)
 
 
 class Player(GameModel):
