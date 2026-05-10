@@ -11,8 +11,8 @@ from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
 from game.ai import AIGenerator
 from game.logger import log_event, setup_logger
 from game.map import Map
-from game.mechanics import ENEMIES
-from game.models import Enemy, Player, Room
+from game.mechanics import ENEMIES, ITEMS, NPCS, _get_item_mechanics
+from game.models import NPC, Enemy, Item, Player, Room
 
 
 class CommandInfo(BaseModel):
@@ -70,8 +70,14 @@ COMMANDS: dict[str, CommandInfo] = {
 # Secret/cheat commands: not shown in help. CommandInfo is kept for consistency
 # with COMMANDS so usage/desc are available if ever surfaced in debug output.
 # Handlers deliberately skip normal combat side-effects (XP, loot drops, etc.).
+_SPAWN_KINDS = ("monster", "npc", "loot")
+
 SECRET_COMMANDS: dict[str, CommandInfo] = {
     "slay": CommandInfo(usage="slay [enemy]", desc="Instantly defeat an enemy"),
+    "spawn": CommandInfo(
+        usage=f"spawn <{'|'.join(_SPAWN_KINDS)}>",
+        desc="Spawn an entity in the current room",
+    ),
 }
 
 # Single-letter aliases for the four cardinal directions, treated as secret shortcuts.
@@ -263,9 +269,13 @@ class GameEngine:
             readline.set_history_length(self.max_history)
 
             def completer(text: str, state: int) -> str | None:
-                options = self.get_completion_options()
+                buf = readline.get_line_buffer()
+                if buf.lstrip().split()[0:1] == ["spawn"]:
+                    all_options = list(_SPAWN_KINDS)
+                else:
+                    all_options = self.get_completion_options()
                 matches = [
-                    opt for opt in options if opt.lower().startswith(text.lower())
+                    opt for opt in all_options if opt.lower().startswith(text.lower())
                 ]
                 if state < len(matches):
                     return matches[state]
@@ -800,3 +810,51 @@ class GameEngine:
             f"With a single devastating strike, you slay {enemy.name} instantly!",
             style="bold red",
         )
+
+    def handle_spawn(self, parts: list[str]) -> None:
+        """Secret command: spawn a monster, NPC, or loot into the current room."""
+        if not self.current_room:
+            return
+
+        if len(parts) < 2 or parts[1].lower() not in _SPAWN_KINDS:
+            self.ui.print(f"Spawn what? ({', '.join(_SPAWN_KINDS)})")
+            return
+
+        kind = parts[1].lower()
+
+        if kind == "monster":
+            if not ENEMIES:
+                self.ui.print("No monster data available.")
+                return
+            data = random.choice(ENEMIES)
+            hp = 10 + self.floor * 5
+            attack = 3 + self.floor * 2
+            monster = Enemy(
+                name=data["name"],
+                description=data["description"],
+                hp=hp,
+                max_hp=hp,
+                attack=attack,
+            )
+            self.current_room.enemies.append(monster)
+            self.ui.print(f"[bold red]{monster.name} appears![/bold red]")
+        elif kind == "npc":
+            if not NPCS:
+                self.ui.print("No NPC data available.")
+                return
+            data = random.choice(NPCS)
+            npc = NPC(
+                name=data["name"],
+                description=data["description"],
+                dialogue_context=data["description"],
+            )
+            self.current_room.npcs.append(npc)
+            self.ui.print(f"[bold blue]{npc.name} appears.[/bold blue]")
+        elif kind == "loot":
+            if not ITEMS:
+                self.ui.print("No loot data available.")
+                return
+            data = random.choice(ITEMS)
+            item = Item(**_get_item_mechanics(data, self.floor))
+            self.current_room.items.append(item)
+            self.ui.print(f"[bold green]{item.name} appears on the floor.[/bold green]")
