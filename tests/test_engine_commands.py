@@ -466,3 +466,69 @@ def test_handle_slay_unknown_target(engine: GameEngine) -> None:
         engine.handle_slay(["slay", "dragon"])
         assert len(engine.current_room.enemies) == 1  # Goblin untouched
         assert_printed(mock_print, "No enemy named 'dragon' here.")
+
+
+@pytest.mark.parametrize(
+    "shortcut, direction, dx, dy",
+    [
+        ("n", "north", 0, 1),
+        ("s", "south", 0, -1),
+        ("e", "east", 1, 0),
+        ("w", "west", -1, 0),
+    ],
+)
+def test_direction_shortcut_moves_player(
+    shortcut: str, direction: str, dx: int, dy: int, fake_ai: Any
+) -> None:
+    """Single-letter shortcut navigates to the matching exit when clear of enemies."""
+    engine = GameEngine(mock_input=[shortcut, "quit"], ai_generator=fake_ai)
+    start_x, start_y = engine.x, engine.y
+    engine.current_room = Room(
+        name="Start",
+        description="A room",
+        exits=[direction],
+    )
+    engine.grid[(start_x, start_y)] = engine.current_room
+    engine.game_loop()
+    assert engine.floor == 2
+    assert engine.x == start_x + dx
+    assert engine.y == start_y + dy
+
+
+@pytest.mark.parametrize("shortcut", ["n", "s", "e", "w"])
+def test_direction_shortcut_blocked_by_enemies(shortcut: str, fake_ai: Any) -> None:
+    """Single-letter shortcut is blocked when enemies are present in the room."""
+    engine = GameEngine(mock_input=[shortcut, "quit"], ai_generator=fake_ai)
+    engine.current_room = Room(
+        name="Danger Room",
+        description="Enemies lurk here",
+        exits=["north", "south", "east", "west"],
+        enemies=[Enemy(name="Goblin", description="Ugly", hp=10, max_hp=10, attack=5)],
+    )
+    floor_before = engine.floor
+    with patch("game.engine.GameUI.print") as mock_print:
+        engine.game_loop()
+    assert engine.floor == floor_before
+    assert_printed(mock_print, "You can't leave while there are enemies here!")
+
+
+@pytest.mark.parametrize(
+    "shortcut, direction",
+    [("n", "north"), ("s", "south"), ("e", "east"), ("w", "west")],
+)
+def test_direction_shortcut_invalid_exit(
+    shortcut: str, direction: str, fake_ai: Any
+) -> None:
+    """Single-letter shortcut prints an error when that exit is not available."""
+    # Offer all other exits except the one the shortcut maps to
+    other_exits = [d for d in ["north", "south", "east", "west"] if d != direction]
+    engine = GameEngine(mock_input=[shortcut, "quit"], ai_generator=fake_ai)
+    engine.current_room = Room(
+        name="Limited Room",
+        description="Only some exits",
+        exits=other_exits,
+    )
+    with patch("game.engine.GameUI.print") as mock_print:
+        engine.game_loop()
+    assert engine.floor == 1
+    assert_printed(mock_print, f"You cannot go '{direction}'.")

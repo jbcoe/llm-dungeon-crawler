@@ -74,6 +74,14 @@ SECRET_COMMANDS: dict[str, CommandInfo] = {
     "slay": CommandInfo(usage="slay [enemy]", desc="Instantly defeat an enemy"),
 }
 
+# Single-letter aliases for the four cardinal directions, treated as secret shortcuts.
+_DIRECTION_SHORTCUTS: dict[str, str] = {
+    "n": "north",
+    "s": "south",
+    "e": "east",
+    "w": "west",
+}
+
 # Enemy spawn probability when resting: starts at 20%, increases by 15% per
 # consecutive rest in the same room, capped at 95%.
 _REST_BASE_SPAWN_CHANCE = 0.20
@@ -407,6 +415,8 @@ class GameEngine:
                 self.handle_unequip()
             elif action == "rest":
                 self.handle_rest()
+            elif action in _DIRECTION_SHORTCUTS:
+                self.handle_go(["go", _DIRECTION_SHORTCUTS[action]])
             elif action in SECRET_COMMANDS:
                 handler = getattr(self, f"handle_{action}", None)
                 if handler:
