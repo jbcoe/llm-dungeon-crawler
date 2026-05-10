@@ -67,6 +67,13 @@ COMMANDS: dict[str, CommandInfo] = {
     ),
 }
 
+# Secret/cheat commands: not shown in help. CommandInfo is kept for consistency
+# with COMMANDS so usage/desc are available if ever surfaced in debug output.
+# Handlers deliberately skip normal combat side-effects (XP, loot drops, etc.).
+SECRET_COMMANDS: dict[str, CommandInfo] = {
+    "slay": CommandInfo(usage="slay [enemy]", desc="Instantly defeat an enemy"),
+}
+
 # Enemy spawn probability when resting: starts at 20%, increases by 15% per
 # consecutive rest in the same room, capped at 95%.
 _REST_BASE_SPAWN_CHANCE = 0.20
@@ -400,6 +407,10 @@ class GameEngine:
                 self.handle_unequip()
             elif action == "rest":
                 self.handle_rest()
+            elif action in SECRET_COMMANDS:
+                handler = getattr(self, f"handle_{action}", None)
+                if handler:
+                    handler(parts)
             else:
                 self.ui.print("Unknown command. Type 'help'.")
 
@@ -741,3 +752,41 @@ class GameEngine:
                 f"[bold red]A {new_enemy.name} appears while you rested![/bold red]"
             )
             self.rest_count = 0
+
+    def handle_slay(self, parts: list[str]) -> None:
+        """Secret command: instantly defeat an enemy."""
+        if not self.current_room or not self.current_room.enemies:
+            self.ui.print("There is nothing to slay here.")
+            return
+
+        target_name = (
+            " ".join(parts[1:]) if len(parts) > 1 else self.current_room.enemies[0].name
+        )
+
+        enemy = next(
+            (
+                e
+                for e in self.current_room.enemies
+                if e.name.lower() == target_name.lower()
+            ),
+            None,
+        )
+        if not enemy:
+            enemy = next(
+                (
+                    e
+                    for e in self.current_room.enemies
+                    if target_name.lower() in e.name.lower()
+                ),
+                None,
+            )
+
+        if not enemy:
+            self.ui.print(f"No enemy named '{target_name}' here.")
+            return
+
+        self.current_room.enemies.remove(enemy)
+        self.ui.print(
+            f"With a single devastating strike, you slay {enemy.name} instantly!",
+            style="bold red",
+        )
