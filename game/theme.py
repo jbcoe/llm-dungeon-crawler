@@ -46,12 +46,24 @@ _DATA_LINE_RE = re.compile(
 )
 
 
+class _FormatMapping(dict[str, str | int]):
+    """Mapping that returns the placeholder text intact for unknown keys."""
+
+    def __missing__(self, key: str) -> str:
+        return f"{{{key}}}"
+
+
+def format_prompt(template: str, **kwargs: str | int) -> str:
+    """Format a prompt template, leaving unknown placeholders intact."""
+    return template.format_map(_FormatMapping(kwargs))
+
+
 class Theme(BaseModel):
     """Represents a complete game theme including data and prompts."""
 
     model_config = ConfigDict(strict=True, frozen=True)
 
-    path: Path
+    name: str
     enemies: list[dict[str, str]]
     items: list[dict[str, str]]
     npcs: list[dict[str, str]]
@@ -62,11 +74,6 @@ class Theme(BaseModel):
     npc_prompt: str
     rest_prompt: str
     room_prompt: str
-
-    @property
-    def name(self) -> str:
-        """Return the name of the theme derived from its directory name."""
-        return self.path.name
 
     @classmethod
     def from_path(cls, path: Path) -> "Theme":
@@ -90,7 +97,7 @@ class Theme(BaseModel):
             prompts[key] = (path / "prompts" / filename).read_text(encoding="utf-8")
 
         return cls(
-            path=path,
+            name=path.name,
             enemies=data["enemies"],
             items=data["items"],
             npcs=data["npcs"],
@@ -170,17 +177,9 @@ def _validate_prompt_file(path: Path, required: frozenset[str]) -> list[str]:
         return [f"{rel}: invalid template syntax: {exc}"]
 
     missing = required - found
-    extra = found - required
 
     for field in sorted(missing):
         errors.append(f"{rel}: missing required template variable '{{{field}}}'")
-
-    for field in sorted(extra):
-        expected_str = ", ".join(f"{{{f}}}" for f in sorted(required))
-        errors.append(
-            f"{rel}: unexpected template variable '{{{field}}}'"
-            + (f" (expected: {expected_str})" if expected_str else "")
-        )
 
     return errors
 

@@ -341,21 +341,10 @@ class GameEngine:
                 if self.history
                 else "Beginning of the journey."
             )
-            map_exits: list[str] = []
-            try:
-                map_exits = self.map_grid.get_exits(self.x, self.y)
-                room_data = self.ai.generate_room(self.floor, context, exits=map_exits)
-                self.current_room = Room(**room_data)
-                self.grid[coord] = self.current_room
-            except Exception as e:
-                log_event("ERROR: room_generation", str(e))
-                # Fallback room
-                self.current_room = Room(
-                    name="Stone Chamber",
-                    description="A non-descript stone chamber.",
-                    exits=map_exits,
-                )
-                self.grid[coord] = self.current_room
+            map_exits = self.map_grid.get_exits(self.x, self.y)
+            room_data = self.ai.generate_room(self.floor, context, exits=map_exits)
+            self.current_room = Room(**room_data)
+            self.grid[coord] = self.current_room
 
         if self.current_room:
             self.ui.display_room(self.current_room)

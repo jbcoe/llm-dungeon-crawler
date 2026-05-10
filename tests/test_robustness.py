@@ -155,17 +155,14 @@ def test_query_model_empty_response(mock_chat: MagicMock, theme: Theme) -> None:
         AIGenerator(model="test", theme=theme)._query_model("prompt")
 
 
-def test_engine_fallback_on_bad_room_generation(theme: Theme) -> None:
-    """Test that the engine recovers if room generation fails."""
+def test_engine_propagates_room_generation_error(theme: Theme) -> None:
+    """Test that room generation errors propagate rather than silently falling back."""
     with patch(
         "game.ai.AIGenerator.generate_room", side_effect=Exception("API failure")
     ):
         engine = GameEngine(theme=theme, mock_input=["quit"])
-        # Manually trigger enter_new_room to test fallback logic
-        engine.enter_new_room("start")
-
-        assert engine.current_room is not None
-        assert engine.current_room.description == "A non-descript stone chamber."
+        with pytest.raises(Exception, match="API failure"):
+            engine.enter_new_room("start")
 
 
 def test_ui_abstraction() -> None:

@@ -126,7 +126,7 @@ def main() -> None:
     parser.add_argument(
         "--theme",
         type=check_theme,
-        default=check_theme("dark-fantasy"),
+        default="dark-fantasy",
         metavar="NAME",
         help=(
             "Name of the theme to use (e.g., 'dark-fantasy', 'scifi'). "

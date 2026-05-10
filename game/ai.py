@@ -14,7 +14,7 @@ from ollama import chat, generate, ps
 
 from game.logger import log_event
 from game.mechanics import generate_mechanics
-from game.theme import Theme
+from game.theme import Theme, format_prompt
 from game.utils import get_model_name, models_match
 
 logger = logging.getLogger(__name__)
@@ -165,7 +165,8 @@ class AIGenerator:
         )
 
         template = self.theme.room_prompt
-        prompt = template.format(
+        prompt = format_prompt(
+            template,
             previous_context=previous_context,
             room_type_name=room_type_name,
             room_type_desc=room_type_desc,
@@ -186,7 +187,8 @@ class AIGenerator:
     ) -> str:
         """Generate narrative text for using an item."""
         template = self.theme.item_use_prompt
-        prompt = template.format(
+        prompt = format_prompt(
+            template,
             item_name=item_name,
             item_description=item_description,
             room_context=room_context,
@@ -198,7 +200,8 @@ class AIGenerator:
     ) -> str:
         """Generate a dialogue response from an NPC."""
         template = self.theme.npc_prompt
-        prompt = template.format(
+        prompt = format_prompt(
+            template,
             npc_name=npc_name,
             npc_context=npc_context,
             history=history,
@@ -216,7 +219,8 @@ class AIGenerator:
     ) -> str:
         """Generate visceral narration for a combat exchange."""
         template = self.theme.combat_prompt
-        prompt = template.format(
+        prompt = format_prompt(
+            template,
             player_action=player_action,
             enemy_name=enemy_name,
             damage_dealt=damage_dealt,
@@ -233,7 +237,8 @@ class AIGenerator:
     def narrate_rest(self, player_hp: int, player_max_hp: int) -> str:
         """Generate narrative text for the player resting."""
         template = self.theme.rest_prompt
-        prompt = template.format(
+        prompt = format_prompt(
+            template,
             player_hp=player_hp,
             player_max_hp=player_max_hp,
         )

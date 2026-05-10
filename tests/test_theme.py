@@ -77,21 +77,19 @@ def test_validate_prompt_file_missing_variable(tmp_path: Path) -> None:
 
 
 def test_validate_prompt_file_extra_variable(tmp_path: Path) -> None:
-    """A prompt file with an unexpected variable is flagged."""
+    """Extra template variables are permitted; only missing required ones are errors."""
     f = tmp_path / "rest.md"
     required = PROMPT_REQUIRED_FIELDS["rest.md"]
     f.write_text("HP: {player_hp}/{player_max_hp}. Also {foo}.")
-    errors = _validate_prompt_file(f, required)
-    assert any("foo" in e and "unexpected" in e for e in errors)
+    assert _validate_prompt_file(f, required) == []
 
 
 def test_validate_prompt_file_no_variables_required(tmp_path: Path) -> None:
-    """intro.md requires no variables; any placeholder is an error."""
+    """intro.md requires no variables; extra placeholders are permitted."""
     f = tmp_path / "intro.md"
     required = PROMPT_REQUIRED_FIELDS["intro.md"]
     f.write_text("You are a {hero} entering the dungeon.")
-    errors = _validate_prompt_file(f, required)
-    assert any("hero" in e and "unexpected" in e for e in errors)
+    assert _validate_prompt_file(f, required) == []
 
 
 def test_validate_prompt_file_intro_no_variables_ok(tmp_path: Path) -> None:
@@ -147,13 +145,13 @@ def test_validate_theme_invalid_data_file(tmp_path: Path) -> None:
 
 
 def test_validate_theme_invalid_prompt(tmp_path: Path) -> None:
-    """A prompt with the wrong variables causes errors."""
+    """A prompt missing required variables causes errors."""
     prompts = tmp_path / "prompts"
     prompts.mkdir()
     (prompts / "rest.md").write_text("Rest now. {unknown_var}")
     errors = validate_theme(tmp_path)
-    assert any("unknown_var" in e for e in errors)
     assert any("player_hp" in e and "missing" in e for e in errors)
+    assert any("player_max_hp" in e and "missing" in e for e in errors)
 
 
 def test_validate_theme_scifi_theme() -> None:
@@ -186,7 +184,6 @@ def test_theme_from_path(tmp_path: Path) -> None:
     theme = Theme.from_path(theme_path)
 
     assert theme.name == "mytheme"
-    assert theme.path == theme_path
     assert len(theme.enemies) == 1
     assert theme.enemies[0]["name"] == "Name"
     assert "{player_hp}" in theme.rest_prompt
