@@ -468,6 +468,65 @@ def test_handle_slay_unknown_target(engine: GameEngine) -> None:
         assert_printed(mock_print, "No enemy named 'dragon' here.")
 
 
+def test_handle_spawn_monster(engine: GameEngine) -> None:
+    """Spawn monster adds a random enemy to the current room."""
+    assert engine.current_room is not None
+    initial_count = len(engine.current_room.enemies)
+    with patch("game.engine.GameUI.print"):
+        engine.handle_spawn(["spawn", "monster"])
+    assert len(engine.current_room.enemies) == initial_count + 1
+
+
+def test_handle_spawn_npc(engine: GameEngine) -> None:
+    """Spawn npc adds a random NPC to the current room."""
+    assert engine.current_room is not None
+    initial_count = len(engine.current_room.npcs)
+    with patch("game.engine.GameUI.print"):
+        engine.handle_spawn(["spawn", "npc"])
+    assert len(engine.current_room.npcs) == initial_count + 1
+
+
+def test_handle_spawn_loot(engine: GameEngine) -> None:
+    """Spawn loot adds a random item to the current room."""
+    assert engine.current_room is not None
+    initial_count = len(engine.current_room.items)
+    with patch("game.engine.GameUI.print"):
+        engine.handle_spawn(["spawn", "loot"])
+    assert len(engine.current_room.items) == initial_count + 1
+
+
+def test_handle_spawn_no_subcommand_shows_usage(engine: GameEngine) -> None:
+    """Spawn with no sub-command prints the valid options."""
+    from game.engine import _SPAWN_KINDS
+
+    assert engine.current_room is not None
+    with patch("game.engine.GameUI.print") as mock_print:
+        engine.handle_spawn(["spawn"])
+    for kind in _SPAWN_KINDS:
+        assert_printed(mock_print, kind)
+
+
+def test_handle_spawn_unknown_kind_shows_usage(engine: GameEngine) -> None:
+    """Spawn with an unknown kind prints the valid options."""
+    from game.engine import _SPAWN_KINDS
+
+    assert engine.current_room is not None
+    with patch("game.engine.GameUI.print") as mock_print:
+        engine.handle_spawn(["spawn", "dragon"])
+    for kind in _SPAWN_KINDS:
+        assert_printed(mock_print, kind)
+
+
+def test_spawn_dispatched_via_game_loop(fake_ai: Any) -> None:
+    """Spawn command is correctly dispatched through the game loop."""
+    engine = GameEngine(mock_input=["spawn monster", "quit"], ai_generator=fake_ai)
+    engine.current_room = Room(name="Test Room", description="Test", exits=["north"])
+    initial_count = len(engine.current_room.enemies)
+    with patch("game.engine.GameUI.print"):
+        engine.game_loop()
+    assert len(engine.current_room.enemies) == initial_count + 1
+
+
 @pytest.mark.parametrize(
     "shortcut, direction, dx, dy",
     [
