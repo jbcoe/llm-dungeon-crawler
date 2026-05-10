@@ -421,3 +421,48 @@ def test_map_integration(engine: GameEngine) -> None:
         # Now (1, 2) should be * and (1, 1) should be o
         assert_printed(mock_print, "[bold red]*[/bold red]")
         assert_printed(mock_print, "[bold green]o[/bold green]")
+
+
+def test_handle_slay_exact_name(engine: GameEngine) -> None:
+    """Slay command removes an enemy matched by exact name."""
+    with patch("game.engine.GameUI.print") as mock_print:
+        assert engine.current_room is not None
+        engine.handle_slay(["slay", "goblin"])
+        assert len(engine.current_room.enemies) == 0
+        assert_printed(mock_print, "you slay Goblin instantly!")
+
+
+def test_handle_slay_partial_name(engine: GameEngine) -> None:
+    """Slay command removes an enemy matched by partial name."""
+    with patch("game.engine.GameUI.print") as mock_print:
+        assert engine.current_room is not None
+        engine.handle_slay(["slay", "gob"])
+        assert len(engine.current_room.enemies) == 0
+        assert_printed(mock_print, "you slay Goblin instantly!")
+
+
+def test_handle_slay_no_target_defaults_to_first(engine: GameEngine) -> None:
+    """Slay command with no target kills the first enemy in the room."""
+    with patch("game.engine.GameUI.print") as mock_print:
+        assert engine.current_room is not None
+        engine.handle_slay(["slay"])
+        assert len(engine.current_room.enemies) == 0
+        assert_printed(mock_print, "you slay Goblin instantly!")
+
+
+def test_handle_slay_no_enemies(engine: GameEngine) -> None:
+    """Slay command prints a message when there are no enemies."""
+    assert engine.current_room is not None
+    engine.current_room.enemies = []
+    with patch("game.engine.GameUI.print") as mock_print:
+        engine.handle_slay(["slay"])
+        assert_printed(mock_print, "There is nothing to slay here.")
+
+
+def test_handle_slay_unknown_target(engine: GameEngine) -> None:
+    """Slay command prints an error when the named enemy is not present."""
+    with patch("game.engine.GameUI.print") as mock_print:
+        assert engine.current_room is not None
+        engine.handle_slay(["slay", "dragon"])
+        assert len(engine.current_room.enemies) == 1  # Goblin untouched
+        assert_printed(mock_print, "No enemy named 'dragon' here.")

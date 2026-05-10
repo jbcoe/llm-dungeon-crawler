@@ -67,6 +67,9 @@ COMMANDS: dict[str, CommandInfo] = {
     ),
 }
 
+# Secret/cheat commands: not shown in help. CommandInfo is kept for consistency
+# with COMMANDS so usage/desc are available if ever surfaced in debug output.
+# Handlers deliberately skip normal combat side-effects (XP, loot drops, etc.).
 SECRET_COMMANDS: dict[str, CommandInfo] = {
     "slay": CommandInfo(usage="slay [enemy]", desc="Instantly defeat an enemy"),
 }
