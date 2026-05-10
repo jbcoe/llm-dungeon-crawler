@@ -1,12 +1,9 @@
 """Game mechanics and data loading."""
 
-import logging
 import random
 from typing import Any
 
 from game.theme import Theme
-
-logger = logging.getLogger(__name__)
 
 
 def _get_item_mechanics(item_data: dict[str, str], floor: int) -> dict[str, Any]:
