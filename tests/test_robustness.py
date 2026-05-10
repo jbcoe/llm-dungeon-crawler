@@ -67,24 +67,26 @@ def test_item_mechanics_balancing() -> None:
                 assert mechanics["items"][0]["stat_effect"] == 0
 
 
-@patch("game.ai.chat")
-def test_query_model_error_handling(mock_chat: MagicMock) -> None:
+def test_query_model_error_handling() -> None:
     """Test that _query_model does not silently hide errors."""
-    mock_chat.side_effect = Exception("AI Service Down")
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    ai.client.chat.completions.create.side_effect = Exception("AI Service Down")
 
     with pytest.raises(Exception, match="AI Service Down"):
-        AIGenerator()._query_model("prompt")
+        ai._query_model("prompt")
 
 
-@patch("game.ai.chat")
-def test_query_model_empty_response(mock_chat: MagicMock) -> None:
+def test_query_model_empty_response() -> None:
     """Test that _query_model raises an error on empty responses."""
-    mock_response = MagicMock()
-    mock_response.message.content = ""
-    mock_chat.return_value = mock_response
+    ai = AIGenerator()
+    ai.client = MagicMock()
+    choice = MagicMock()
+    choice.message.content = ""
+    ai.client.chat.completions.create.return_value = MagicMock(choices=[choice])
 
     with pytest.raises(ValueError, match="AI returned an empty response."):
-        AIGenerator()._query_model("prompt")
+        ai._query_model("prompt")
 
 
 def test_engine_fallback_on_bad_room_generation() -> None:
