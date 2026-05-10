@@ -7,30 +7,13 @@ from game.theme import Theme
 
 
 def _get_item_mechanics(item_data: dict[str, str], floor: int) -> dict[str, Any]:
-    """Determine item mechanics based on its name and floor."""
-    name_lower = item_data["name"].lower()
-
-    # Define keywords for different item types
-    healing_keywords = ["potion", "salve", "elixir", "herb", "tonic"]
-    weapon_keywords = [
-        "sword",
-        "blade",
-        "axe",
-        "hammer",
-        "dagger",
-        "spear",
-        "mace",
-        "staff",
-    ]
-
-    effect_type = "none"
+    """Determine item mechanics from the effect_type tag in the theme data."""
+    effect_type = item_data.get("effect_type", "none")
     stat_effect = 0
 
-    if any(k in name_lower for k in healing_keywords):
-        effect_type = "healing"
+    if effect_type == "healing":
         stat_effect = 20 + (floor * 2)
-    elif any(k in name_lower for k in weapon_keywords):
-        effect_type = "weapon"
+    elif effect_type == "weapon":
         stat_effect = 5 + (floor * 2)
 
     return {

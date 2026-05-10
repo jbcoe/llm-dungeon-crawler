@@ -53,7 +53,7 @@ def test_generate_mechanics(tmp_path: Path) -> None:
     theme_path.mkdir()
     (theme_path / "enemies.md").write_text("- Goblin: Ugly\n")
     (theme_path / "npcs.md").write_text("- Merchant: Sells\n")
-    (theme_path / "items.md").write_text("- Health Potion: Heals\n")
+    (theme_path / "items.md").write_text("- Health Potion: Heals : healing\n")
     (theme_path / "rooms.md").write_text("- Cave: Dark\n")
 
     prompts_dir = theme_path / "prompts"
@@ -113,7 +113,7 @@ def test_generate_mechanics_weapons(tmp_path: Path) -> None:
     theme_path.mkdir()
     (theme_path / "enemies.md").write_text("- Enemy: Desc\n")
     (theme_path / "npcs.md").write_text("- NPC: Desc\n")
-    (theme_path / "items.md").write_text("- Iron Sword: Sharp\n")
+    (theme_path / "items.md").write_text("- Iron Sword: Sharp : weapon\n")
     (theme_path / "rooms.md").write_text("- Room: Desc\n")
 
     prompts_dir = theme_path / "prompts"

@@ -108,7 +108,7 @@ def test_item_mechanics_balancing(tmp_path: Path) -> None:
     )
 
     # Healing item
-    (theme_path / "items.md").write_text("- Health Potion: Heals you.\n")
+    (theme_path / "items.md").write_text("- Health Potion: Heals you. : healing\n")
     theme = Theme.from_path(theme_path)
     with patch("random.random", return_value=0.1):  # force item spawn
         mechanics = generate_mechanics(floor=1, theme=theme)
@@ -117,7 +117,7 @@ def test_item_mechanics_balancing(tmp_path: Path) -> None:
         assert mechanics["items"][0]["stat_effect"] >= 20
 
     # Weapon item
-    (theme_path / "items.md").write_text("- Iron Sword: A sharp blade.\n")
+    (theme_path / "items.md").write_text("- Iron Sword: A sharp blade. : weapon\n")
     theme = Theme.from_path(theme_path)
     with patch("random.random", return_value=0.1):
         mechanics = generate_mechanics(floor=1, theme=theme)

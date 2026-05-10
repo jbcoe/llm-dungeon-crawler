@@ -40,8 +40,10 @@ _DATA_FILES: frozenset[str] = frozenset(
 _PROMPT_FILES: frozenset[str] = frozenset(PROMPT_REQUIRED_FIELDS.keys())
 
 # Matches valid data-file list entries: optional leading space, then - or *,
-# then "Name : Description"
-_DATA_LINE_RE = re.compile(r"^\s*[-*]\s*([^:]+):\s*(.*)$", re.MULTILINE)
+# then "Name : Description" with an optional trailing ": effect_type" tag.
+_DATA_LINE_RE = re.compile(
+    r"^\s*[-*]\s*([^:]+):\s*(.*?)(?:\s*:\s*(\w+))?\s*$", re.MULTILINE
+)
 
 
 class Theme(BaseModel):
@@ -115,12 +117,20 @@ def _get_template_fields(template: str) -> set[str]:
 
 
 def _load_data_file(path: Path) -> list[dict[str, str]]:
-    """Load and parse a data markdown file into a list of name/desc dicts."""
+    """
+    Load and parse a data markdown file into a list of name/desc dicts.
+
+    Each entry may carry an optional effect-type tag written as a third
+    colon-separated field: ``- Name: Description : healing``
+    """
     content = path.read_text(encoding="utf-8")
     items: list[dict[str, str]] = []
     matches = _DATA_LINE_RE.findall(content)
-    for name, desc in matches:
-        items.append({"name": name.strip(), "description": desc.strip()})
+    for name, desc, tag in matches:
+        entry: dict[str, str] = {"name": name.strip(), "description": desc.strip()}
+        if tag.strip():
+            entry["effect_type"] = tag.strip()
+        items.append(entry)
     return items
 
 
