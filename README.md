@@ -54,9 +54,41 @@ Once the game starts, you interact via text commands:
 | `--size <n>`                                | `8`            | The width/height of the pre-generated dungeon map (minimum 3). Larger maps mean more rooms to explore but take slightly longer to generate at start-up.                                                                                                                                                             |
 | `--history-length <n>`                      | `1000`         | Maximum number of commands retained in the readline history. Set to `0` to disable history. Reducing this value may help in memory-constrained environments.                                                                                                                                                        |
 | `--experimental-max-loading-time <seconds>` | `0` (disabled) | **Experimental.** Adds a random delay of up to the given number of seconds between room transitions, simulating the feel of a retro game loading screen. Has no effect on gameplay beyond pacing.                                                                                                                   |
+| `--theme <name>`                            | `dark-fantasy` | Name of the theme to use (e.g., 'dark-fantasy', 'scifi'). Must correspond to a directory in themes/. Each theme must be complete (containing enemies.md, items.md, npcs.md, rooms.md and prompts/\*.md).                                                                                                            |
 
 Example — launch with a smaller model on a map of 12×12:
 
 ```bash
 uv run dungeon-crawler --model llama3 --size 12
 ```
+
+## Custom Themes
+
+The game supports alternative thematic content (Sci-Fi, Cyberpunk, etc.) via the `--theme` flag. A bundled sci-fi theme is available in the `themes/scifi` directory.
+
+To play the Sci-Fi version:
+
+```bash
+uv run dungeon-crawler --theme scifi
+```
+
+### Creating Your Own Theme
+
+To create a custom theme, create a directory inside `themes/` with the following structure:
+
+```text
+themes/my-theme/
+├── enemies.md
+├── items.md
+├── npcs.md
+├── rooms.md
+└── prompts/
+    ├── combat.md
+    ├── intro.md
+    ├── item_use.md
+    ├── npc.md
+    ├── rest.md
+    └── room.md
+```
+
+Each theme must be complete; if you want to base a new theme on an existing one, copy the files from `themes/dark-fantasy` or `themes/scifi` and modify them. Data files (`.md`) should follow the `- Name: Description` format, and prompt files must maintain the required `{variable}` placeholders.

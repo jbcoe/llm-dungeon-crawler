@@ -43,25 +43,31 @@ Both agents accept the following flags:
 
 The game is designed to be easily expanded by non-programmers. All flavor text, entities, environments, and core AI prompts are data-driven and can be updated without touching any Python code.
 
-All content is stored in the `game/data/` directory as standard Markdown (`.md`) files:
+All content is stored in the `themes/` directory. Each theme is a self-contained folder (e.g., `themes/dark-fantasy/`) containing:
 
 1. **Entities and Environments:**
-   Lists of available enemies, items, NPCs, and rooms are defined in their respective markdown files (e.g., `enemies.md`, `rooms.md`). To add new content, add a new line following the established `- Name: Description` format. The game engine automatically loads these at runtime.
+   Lists of available enemies, items, NPCs, and rooms are defined in markdown files: `enemies.md`, `items.md`, `npcs.md`, and `rooms.md`. To add new content, add a new line following the established `- Name: Description` format.
 
 2. **AI Prompts:**
-   All instructions sent to the Ollama LLM are stored as prompt templates (e.g., `prompts/room.md`, `prompts/combat.md`). These files control the tone, style, and rules the AI follows when generating narrative text.
+   All instructions sent to the Ollama LLM are stored as prompt templates in the `prompts/` subdirectory (e.g., `prompts/room.md`, `prompts/combat.md`). These files control the tone, style, and rules the AI follows.
 
-   - If you want the game to feel like a sci-fi adventure rather than dark fantasy, you can simply edit the prompt text in these files.
-   - The engine uses variables wrapped in curly braces (e.g., `{enemy_name}`). When modifying the prompt text, ensure these variables are kept intact so the engine can inject the correct context into the prompts.
-   - **Important:** Because these templates use Python's `.format()` method, if you need to use literal curly braces in your prompt (e.g., for JSON-like structures), you must escape them by doubling them up like `{{` and `}}`.
+   - The engine uses variables wrapped in curly braces (e.g., `{enemy_name}`). When modifying the prompt text, ensure these variables are kept intact.
+   - **Important:** If you need to use literal curly braces in your prompt, you must escape them by doubling them up like `{{` and `}}`.
+
+To create a new theme, copy an existing one (like `themes/dark-fantasy`) to a new folder in `themes/` and modify the files. You can then play it using:
+
+```bash
+uv run dungeon-crawler --theme my-new-theme
+```
 
 ## Working with the Code
 
 The codebase is structured to separate deterministic mechanics from LLM flavor:
 
-- `game/mechanics.py`: Handles all stats, logic, and procedural generation based on tables.
-- `game/data/*.md`: Markdown lists containing definitions for enemies, items, NPCs, and rooms. Add new content here!
-- `game/ai.py`: Connects to Ollama to generate atmospheric text based on the mechanics output.
+- `game/mechanics.py`: Handles all stats, logic, and procedural generation based on thematic data.
+- `themes/`: Root directory for all game settings. Add new themes here!
+- `game/theme.py`: Defines the `Theme` data model and strict validation logic.
+- `game/ai.py`: Connects to Ollama to generate atmospheric text based on theme prompts.
 - `game/engine.py`: The core game loop, state management, and command parser.
 
 ## Running Tests

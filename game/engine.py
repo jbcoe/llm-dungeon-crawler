@@ -11,8 +11,8 @@ from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
 from game.ai import AIGenerator
 from game.logger import log_event, setup_logger
 from game.map import Map
-from game.mechanics import ENEMIES
 from game.models import Enemy, Player, Room
+from game.theme import Theme
 
 
 class CommandInfo(BaseModel):
@@ -195,6 +195,7 @@ class GameEngine:
 
     def __init__(
         self,
+        theme: Theme,
         mock_input: list[str] | None = None,
         max_history: int = 1000,
         model: str = "gemma4:e4b",
@@ -206,12 +207,15 @@ class GameEngine:
         """
         Initialize the game engine.
 
+        The ``theme`` parameter provides the pre-loaded thematic content.
+
         The ``max_loading_time`` parameter controls the maximum random loading
         duration (in seconds) shown between room transitions.  When set to 0
         (the default) no loading screen is displayed.
         """
         self.player = Player()
-        self.ai = ai_generator or AIGenerator(model=model)
+        self.theme = theme
+        self.ai = ai_generator or AIGenerator(model=model, theme=theme)
         self.model = self.ai.model
         self.floor = 1
         self.current_room: Room | None = None
@@ -337,21 +341,10 @@ class GameEngine:
                 if self.history
                 else "Beginning of the journey."
             )
-            map_exits: list[str] = []
-            try:
-                map_exits = self.map_grid.get_exits(self.x, self.y)
-                room_data = self.ai.generate_room(self.floor, context, exits=map_exits)
-                self.current_room = Room(**room_data)
-                self.grid[coord] = self.current_room
-            except Exception as e:
-                log_event("ERROR: room_generation", str(e))
-                # Fallback room
-                self.current_room = Room(
-                    name="Stone Chamber",
-                    description="A non-descript stone chamber.",
-                    exits=map_exits,
-                )
-                self.grid[coord] = self.current_room
+            map_exits = self.map_grid.get_exits(self.x, self.y)
+            room_data = self.ai.generate_room(self.floor, context, exits=map_exits)
+            self.current_room = Room(**room_data)
+            self.grid[coord] = self.current_room
 
         if self.current_room:
             self.ui.display_room(self.current_room)
@@ -725,8 +718,9 @@ class GameEngine:
         )
         self.rest_count += 1
 
-        if ENEMIES and random.random() < spawn_chance:
-            enemy_data = random.choice(ENEMIES)
+        enemies = self.theme.enemies
+        if enemies and random.random() < spawn_chance:
+            enemy_data = random.choice(enemies)
             hp = 10 + self.floor * 5
             attack = 3 + self.floor * 2
             new_enemy = Enemy(

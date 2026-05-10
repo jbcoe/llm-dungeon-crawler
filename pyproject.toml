@@ -29,6 +29,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["game"]
+artifacts = ["themes/"]
 
 [tool.pytest]
 testpaths = ["tests"]

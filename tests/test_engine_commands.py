@@ -1,5 +1,6 @@
 """Unit tests for engine commands."""
 
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -7,12 +8,47 @@ import pytest
 
 from game.engine import GameEngine
 from game.models import NPC, Enemy, Item, Player, Room
+from game.theme import Theme
 
 
 @pytest.fixture
-def engine(fake_ai: Any) -> GameEngine:
+def theme(tmp_path: Path) -> Theme:
+    """Fixture to create a minimal valid theme for testing."""
+    theme_path = tmp_path / "test-theme"
+    theme_path.mkdir()
+
+    for f in ["enemies.md", "items.md", "npcs.md", "rooms.md"]:
+        (theme_path / f).write_text("- Name: Desc\n")
+
+    prompts_dir = theme_path / "prompts"
+    prompts_dir.mkdir()
+    (prompts_dir / "combat.md").write_text(
+        "{player_action}{enemy_name}{damage_dealt}{enemy_hp}{player_hp}"
+    )
+    (prompts_dir / "intro.md").write_text("Test Intro Prompt")
+    (prompts_dir / "item_use.md").write_text(
+        "{item_name}{item_description}{room_context}"
+    )
+    (prompts_dir / "npc.md").write_text(
+        "{npc_name}{npc_context}{history}{player_message}"
+    )
+    (prompts_dir / "rest.md").write_text("{player_hp}{player_max_hp}")
+    (prompts_dir / "room.md").write_text(
+        "{previous_context}{room_type_name}{room_type_desc}"
+        "{exits_str}{enemies_str}{npcs_str}{items_str}"
+    )
+
+    return Theme.from_path(theme_path)
+
+
+@pytest.fixture
+def engine(fake_ai: Any, theme: Theme) -> GameEngine:
     """Fixture that initializes a GameEngine with a mocked Room and Player state."""
-    engine = GameEngine(mock_input=["quit"], ai_generator=fake_ai)
+    engine = GameEngine(
+        theme=theme,
+        mock_input=["quit"],
+        ai_generator=fake_ai,
+    )
     engine.player = Player()
     engine.current_room = Room(
         name="Test Room",
@@ -338,15 +374,11 @@ def test_handle_rest_enemy_can_spawn(engine: GameEngine) -> None:
     with (
         patch("game.engine.GameUI.print") as mock_print,
         patch("random.random", return_value=0.0),  # Force enemy spawn
-        patch(
-            "game.engine.ENEMIES",
-            [{"name": "Shadow Rat", "description": "A sneaky rodent."}],
-        ),
     ):
         engine.handle_rest()
         assert len(engine.current_room.enemies) == 1
-        assert engine.current_room.enemies[0].name == "Shadow Rat"
-        assert_printed(mock_print, "Shadow Rat")
+        assert engine.current_room.enemies[0].name == "Name"
+        assert_printed(mock_print, "Name")
         assert_printed(mock_print, "appears while you rested")
         # rest_count resets after a spawn
         assert engine.rest_count == 0
