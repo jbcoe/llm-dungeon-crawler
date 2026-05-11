@@ -1,0 +1,23 @@
+# NPC Types
+
+- Grumpy Groundskeeper:A mud-splattered veteran who hates the sport, the weather, and everyone enjoying themselves.
+- Overworked Cleaner:A tired figure armed with a mop and a thousand-yard stare.
+- Zealous Hygiene Officer:A clipboard-wielding fanatic who treats disinfectant like scripture.
+- Bitter Receptionist:A smiling face that drops instantly once you turn away.
+- Soggy Pool Attendant:Always damp, always cold, and faintly smelling of chlorine.
+- Reluctant Lifeguard:A whistle-blower who would rather be anywhere but vigilant.
+- Sleepy Night Guard:A thermos-clutching watcher of empty corridors and strange sounds.
+- Angry Grounds Chef:A fry-stained cook muttering about impossible orders and undercooked meat.
+- Weary Maintenance Tech:A belt-loaded fixer permanently covered in grease and complaint.
+- Silent Locker Attendant:A watchful presence who knows far more than they acknowledge.
+- Resigned Cart Driver:A slow-moving transport operator questioning every life choice.
+- Harried Shift Supervisor:Too responsible to leave and too underpaid to care.
+- Moody Waste Collector:A bin-dragging philosopher intimately familiar with human excess.
+- Oblivious Junior Trainer:Overly enthusiastic despite clear signs of doom.
+- Sunburned Client:A paying guest already regretting a full-day pass.
+- Competitive Member:A tense individual treating leisure like a high-stakes test.
+- Confused Tourist:A lost outsider wandering into places they probably shouldn't be.
+- Detached Operations Manager:A well-paid authority figure rarely seen and never helpful.
+- Smug Facility Director:A tailored suit confidently denying all reported problems.
+- Exhausted Payroll Officer:A numbers person haunted by overtime requests.
+- Nervous Event Coordinator:A planner quietly panicking about schedules, smells, and liability.
