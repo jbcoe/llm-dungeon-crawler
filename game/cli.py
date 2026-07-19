@@ -4,12 +4,12 @@ import argparse
 import json
 import os
 import sys
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
 import ollama
 from rich.console import Console
 
-from game.ai import AIGenerator
+from game.ai import AIGenerator, safe_urlopen
 from game.engine import GameEngine
 from game.utils import get_model_name, models_match
 
@@ -66,7 +66,7 @@ def check_openai_connection(
     headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
     request = Request(f"{normalized_url}/models", headers=headers)
     try:
-        with urlopen(request, timeout=10) as response:
+        with safe_urlopen(request, timeout=10) as response:
             response_data = json.loads(response.read())
         model_names = [model.get("id", "") for model in response_data.get("data", [])]
         if required_model not in model_names:
@@ -117,10 +117,6 @@ def main() -> None:
         help="Base URL for an OpenAI-compatible API, including /v1",
     )
     parser.add_argument(
-        "--api-key",
-        help="API key for the OpenAI-compatible API (prefer OPENAI_API_KEY)",
-    )
-    parser.add_argument(
         "--history-length",
         type=check_history_length,
         default=1000,
@@ -163,7 +159,7 @@ def main() -> None:
     else:
         if not args.base_url:
             parser.error("--base-url is required when --backend=openai")
-        api_key = args.api_key or os.environ.get("OPENAI_API_KEY")
+        api_key = os.environ.get("OPENAI_API_KEY")
         check_openai_connection(args.base_url, args.model, api_key)
         ai_generator = AIGenerator(
             model=args.model,

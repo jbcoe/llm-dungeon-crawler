@@ -11,7 +11,8 @@ import urllib.parse
 from contextlib import contextmanager
 from functools import lru_cache
 from typing import Any, Generator
-from urllib.request import Request, urlopen
+from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 import ollama
 from ollama import chat, generate, ps
@@ -21,6 +22,41 @@ from game.mechanics import generate_mechanics
 from game.utils import get_model_name, models_match
 
 logger = logging.getLogger(__name__)
+
+
+def _url_origin(url: str) -> tuple[str, str, int | None]:
+    """Return a normalized origin tuple for redirect credential checks."""
+    parsed = urlsplit(url)
+    default_port = {"http": 80, "https": 443}.get(parsed.scheme.lower())
+    return (
+        parsed.scheme.lower(),
+        (parsed.hostname or "").lower(),
+        parsed.port or default_port,
+    )
+
+
+class SafeRedirectHandler(HTTPRedirectHandler):
+    """Follow redirects without forwarding credentials to another origin."""
+
+    def redirect_request(
+        self,
+        req: Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> Request | None:
+        """Strip authorization whenever a redirect changes scheme, host, or port."""
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is not None and _url_origin(req.full_url) != _url_origin(newurl):
+            redirected.remove_header("Authorization")
+        return redirected
+
+
+def safe_urlopen(request: Request, timeout: float) -> Any:
+    """Open an HTTP request using credential-safe redirect handling."""
+    return build_opener(SafeRedirectHandler()).open(request, timeout=timeout)
 
 
 @lru_cache(maxsize=None)
@@ -170,7 +206,7 @@ class AIGenerator:
                 headers=headers,
                 method="POST",
             )
-            with urlopen(request, timeout=120) as response:
+            with safe_urlopen(request, timeout=120) as response:
                 response_data = json.loads(response.read())
             content = response_data["choices"][0]["message"].get("content")
 

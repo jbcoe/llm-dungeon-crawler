@@ -48,8 +48,9 @@ uv run dungeon-crawler \
   --model your-served-model
 ```
 
-For an authenticated API, put the key in the standard environment variable rather
-than exposing it in shell history:
+For an authenticated API, put the key in the standard environment variable. The
+command line intentionally does not accept API keys because process arguments and
+shell history may be visible to other users:
 
 ```bash
 export OPENAI_API_KEY='your-key'
@@ -73,15 +74,14 @@ Once the game starts, you interact via text commands:
 
 ## Command-Line Options
 
-| Option                                      | Default                  | Description                                                                                                               |
-| ------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `--backend <name>`                          | `ollama`                 | Inference protocol (`ollama` or `openai`). Use `openai` for vLLM and other OpenAI-compatible servers.                     |
-| `--base-url <url>`                          | —                        | OpenAI-compatible API root including `/v1`; required for the `openai` backend.                                            |
-| `--api-key <key>`                           | `OPENAI_API_KEY` or none | API key override. Prefer the environment variable so the key does not enter shell history.                                |
-| `--model <name>`                            | `gemma4:e4b`             | Model ID used for generation. Ollama users must pull it first; remote users must select an ID advertised by `/v1/models`. |
-| `--size <n>`                                | `8`                      | Width/height of the pre-generated dungeon map (minimum 3).                                                                |
-| `--history-length <n>`                      | `1000`                   | Maximum commands retained in readline history; `0` disables history.                                                      |
-| `--experimental-max-loading-time <seconds>` | `0` (disabled)           | **Experimental.** Random delay up to this duration between room transitions.                                              |
+| Option                                      | Default        | Description                                                                                                               |
+| ------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `--backend <name>`                          | `ollama`       | Inference protocol (`ollama` or `openai`). Use `openai` for vLLM and other OpenAI-compatible servers.                     |
+| `--base-url <url>`                          | —              | OpenAI-compatible API root including `/v1`; required for the `openai` backend.                                            |
+| `--model <name>`                            | `gemma4:e4b`   | Model ID used for generation. Ollama users must pull it first; remote users must select an ID advertised by `/v1/models`. |
+| `--size <n>`                                | `8`            | Width/height of the pre-generated dungeon map (minimum 3).                                                                |
+| `--history-length <n>`                      | `1000`         | Maximum commands retained in readline history; `0` disables history.                                                      |
+| `--experimental-max-loading-time <seconds>` | `0` (disabled) | **Experimental.** Random delay up to this duration between room transitions.                                              |
 
 Example — launch with a smaller model on a map of 12×12:
 
