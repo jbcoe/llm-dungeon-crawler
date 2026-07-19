@@ -1,11 +1,17 @@
 """Unit tests for cli.py."""
 
 import argparse
+import json
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from game.cli import check_history_length, check_ollama_connection, main
+from game.cli import (
+    check_history_length,
+    check_ollama_connection,
+    check_openai_connection,
+    main,
+)
 
 
 def test_check_history_length() -> None:
@@ -80,6 +86,22 @@ def test_check_ollama_connection_error(
     mock_print.assert_called()
 
 
+@patch("game.cli.urlopen")
+def test_check_openai_connection_success(mock_urlopen: MagicMock) -> None:
+    """Accept an OpenAI-compatible endpoint advertising the requested model."""
+    response = MagicMock()
+    response.__enter__.return_value.read.return_value = json.dumps(
+        {"data": [{"id": "other-model"}, {"id": "remote-model"}]}
+    ).encode()
+    mock_urlopen.return_value = response
+
+    check_openai_connection("http://api.example/v1/", "remote-model", "test-key")
+
+    request = mock_urlopen.call_args.args[0]
+    assert request.full_url == "http://api.example/v1/models"
+    assert request.get_header("Authorization") == "Bearer test-key"
+
+
 @patch("sys.argv", ["dungeon-crawler", "--history-length", "50"])
 @patch("game.cli.AIGenerator.manage_ollama")
 @patch("game.cli.check_ollama_connection")
@@ -119,5 +141,54 @@ def test_main_with_loading_time(
 
     mock_engine_cls.assert_called_once_with(
         max_history=1000, model="gemma4:e4b", map_size=8, max_loading_time=3.5
+    )
+    mock_engine.start.assert_called_once()
+
+
+@patch(
+    "sys.argv",
+    [
+        "dungeon-crawler",
+        "--backend",
+        "openai",
+        "--base-url",
+        "http://api.example/v1",
+        "--model",
+        "remote-model",
+    ],
+)
+@patch.dict("os.environ", {}, clear=True)
+@patch("game.cli.AIGenerator.manage_ollama")
+@patch("game.cli.check_openai_connection")
+@patch("game.cli.GameEngine")
+@patch("game.cli.AIGenerator")
+def test_main_with_openai_backend(
+    mock_ai_cls: MagicMock,
+    mock_engine_cls: MagicMock,
+    mock_check_conn: MagicMock,
+    mock_manage: MagicMock,
+) -> None:
+    """Configure the engine to use an OpenAI-compatible remote backend."""
+    mock_ai = mock_ai_cls.return_value
+    mock_engine = mock_engine_cls.return_value
+
+    main()
+
+    mock_manage.assert_not_called()
+    mock_check_conn.assert_called_once_with(
+        "http://api.example/v1", "remote-model", None
+    )
+    mock_ai_cls.assert_called_once_with(
+        model="remote-model",
+        backend="openai",
+        base_url="http://api.example/v1",
+        api_key=None,
+    )
+    mock_engine_cls.assert_called_once_with(
+        max_history=1000,
+        model="remote-model",
+        ai_generator=mock_ai,
+        map_size=8,
+        max_loading_time=0.0,
     )
     mock_engine.start.assert_called_once()

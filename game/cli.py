@@ -1,7 +1,10 @@
 """Command line interface and entry point logic."""
 
 import argparse
+import json
+import os
 import sys
+from urllib.request import Request, urlopen
 
 import ollama
 from rich.console import Console
@@ -55,6 +58,33 @@ def check_ollama_connection(required_model: str = "gemma4:e4b") -> None:
         sys.exit(1)
 
 
+def check_openai_connection(
+    base_url: str, required_model: str, api_key: str | None
+) -> None:
+    """Verify an OpenAI-compatible endpoint and required model are available."""
+    normalized_url = base_url.rstrip("/")
+    headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+    request = Request(f"{normalized_url}/models", headers=headers)
+    try:
+        with urlopen(request, timeout=10) as response:
+            response_data = json.loads(response.read())
+        model_names = [model.get("id", "") for model in response_data.get("data", [])]
+        if required_model not in model_names:
+            console.print(
+                f"[bold red]ERROR: Model '{required_model}' was not advertised by "
+                f"{normalized_url}.[/bold red]"
+            )
+            console.print(f"Available models: {', '.join(model_names) or 'none'}")
+            sys.exit(1)
+    except Exception as e:
+        console.print(
+            "[bold red]ERROR: Could not connect to the OpenAI-compatible "
+            "server.[/bold red]"
+        )
+        console.print(f"Details: {e}")
+        sys.exit(1)
+
+
 def check_history_length(value: str) -> int:
     """Validate that the history length is a non-negative integer."""
     ivalue = int(value)
@@ -77,6 +107,20 @@ def main() -> None:
     """Parse arguments and start the game engine."""
     parser = argparse.ArgumentParser(description="LLM Dungeon Crawler")
     parser.add_argument(
+        "--backend",
+        choices=("ollama", "openai"),
+        default="ollama",
+        help="Inference backend to use (default: ollama)",
+    )
+    parser.add_argument(
+        "--base-url",
+        help="Base URL for an OpenAI-compatible API, including /v1",
+    )
+    parser.add_argument(
+        "--api-key",
+        help="API key for the OpenAI-compatible API (prefer OPENAI_API_KEY)",
+    )
+    parser.add_argument(
         "--history-length",
         type=check_history_length,
         default=1000,
@@ -86,7 +130,7 @@ def main() -> None:
         "--model",
         type=str,
         default="gemma4:e4b",
-        help="The Ollama model to use for the game (default: gemma4:e4b)",
+        help="The model ID to use for the game (default: gemma4:e4b)",
     )
     parser.add_argument(
         "--size",
@@ -106,11 +150,31 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    with AIGenerator.manage_ollama(args.model):
-        check_ollama_connection(args.model)
+    if args.backend == "ollama":
+        with AIGenerator.manage_ollama(args.model):
+            check_ollama_connection(args.model)
+            engine = GameEngine(
+                max_history=args.history_length,
+                model=args.model,
+                map_size=args.size,
+                max_loading_time=args.experimental_max_loading_time,
+            )
+            engine.start()
+    else:
+        if not args.base_url:
+            parser.error("--base-url is required when --backend=openai")
+        api_key = args.api_key or os.environ.get("OPENAI_API_KEY")
+        check_openai_connection(args.base_url, args.model, api_key)
+        ai_generator = AIGenerator(
+            model=args.model,
+            backend="openai",
+            base_url=args.base_url,
+            api_key=api_key,
+        )
         engine = GameEngine(
             max_history=args.history_length,
             model=args.model,
+            ai_generator=ai_generator,
             map_size=args.size,
             max_loading_time=args.experimental_max_loading_time,
         )

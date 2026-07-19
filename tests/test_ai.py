@@ -1,5 +1,6 @@
 """Unit tests for ai.py."""
 
+import json
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -123,6 +124,39 @@ def test_empty_ai_response(mock_chat: MagicMock) -> None:
     mock_chat.return_value = MagicMock(message=MagicMock(content=None))
     with pytest.raises(ValueError, match="AI returned an empty response."):
         AIGenerator().generate_intro()
+
+
+@patch("game.ai.urlopen")
+def test_openai_compatible_query(mock_urlopen: MagicMock) -> None:
+    """Send prompts to an OpenAI-compatible endpoint and return its content."""
+    response = MagicMock()
+    response.__enter__.return_value.read.return_value = json.dumps(
+        {"choices": [{"message": {"content": "A shadowed chamber awaits."}}]}
+    ).encode()
+    mock_urlopen.return_value = response
+
+    generator = AIGenerator(
+        model="remote-model",
+        backend="openai",
+        base_url="http://api.example/v1/",
+        api_key="test-key",
+    )
+
+    result = generator._query_model("Describe the room.", "Be concise.")
+
+    assert result == "A shadowed chamber awaits."
+    request = mock_urlopen.call_args.args[0]
+    assert request.full_url == "http://api.example/v1/chat/completions"
+    assert request.get_header("Authorization") == "Bearer test-key"
+    payload = json.loads(request.data)
+    assert payload == {
+        "model": "remote-model",
+        "messages": [
+            {"role": "system", "content": "Be concise."},
+            {"role": "user", "content": "Describe the room."},
+        ],
+        "temperature": 0.7,
+    }
 
 
 @patch("game.ai.generate_mechanics")
