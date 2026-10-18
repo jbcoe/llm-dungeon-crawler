@@ -9,6 +9,7 @@ dependencies = [
     "rich>=14.3.3",
     "pydantic>=2.12.5",
     "numpy>=2.4.4",
+    "openai>=3.35.1",
 ]
 
 [project.scripts]

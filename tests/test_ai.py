@@ -218,3 +218,42 @@ def test_generate_intro_real_prompt(mock_chat: MagicMock) -> None:
     prompt_sent = mock_chat.call_args[1]["messages"][0]["content"]
     expected_prompt = load_prompt("intro.md")
     assert prompt_sent == expected_prompt
+
+
+@patch("game.ai.OpenAI")
+@patch("game.ai.load_prompt")
+def test_generate_intro_uses_openai_endpoint_when_configured(
+    mock_load_prompt: MagicMock, mock_openai_cls: MagicMock
+) -> None:
+    """Verify a configured endpoint is queried via the OpenAI client, not Ollama."""
+    mock_load_prompt.return_value = "Test Intro Prompt"
+    mock_client = mock_openai_cls.return_value
+    mock_client.chat.completions.create.return_value = MagicMock(
+        choices=[MagicMock(message=MagicMock(content="Welcome, stranger."))]
+    )
+
+    generator = AIGenerator(
+        model="gpt-4o-mini", base_url="https://api.example.com/v1", api_key="sk-test"
+    )
+    result = generator.generate_intro()
+
+    assert result == "Welcome, stranger."
+    mock_openai_cls.assert_called_once_with(
+        base_url="https://api.example.com/v1", api_key="sk-test"
+    )
+    call_kwargs = mock_client.chat.completions.create.call_args[1]
+    assert call_kwargs["model"] == "gpt-4o-mini"
+    assert call_kwargs["messages"][0]["content"] == "Test Intro Prompt"
+
+
+@patch("game.ai.OpenAI")
+def test_empty_openai_response_raises(mock_openai_cls: MagicMock) -> None:
+    """Validate the game raises ValueError on an empty endpoint response."""
+    mock_client = mock_openai_cls.return_value
+    mock_client.chat.completions.create.return_value = MagicMock(
+        choices=[MagicMock(message=MagicMock(content=None))]
+    )
+
+    generator = AIGenerator(model="gpt-4o-mini", base_url="https://api.example.com/v1")
+    with pytest.raises(ValueError, match="AI returned an empty response."):
+        generator.generate_intro()

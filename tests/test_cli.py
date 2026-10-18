@@ -121,3 +121,45 @@ def test_main_with_loading_time(
         max_history=1000, model="gemma4:e4b", map_size=8, max_loading_time=3.5
     )
     mock_engine.start.assert_called_once()
+
+
+@patch(
+    "sys.argv",
+    [
+        "dungeon-crawler",
+        "--endpoint",
+        "https://api.example.com/v1",
+        "--endpoint-api-key",
+        "sk-test",
+        "--model",
+        "gpt-4o-mini",
+    ],
+)
+@patch("game.cli.AIGenerator.manage_ollama")
+@patch("game.cli.check_ollama_connection")
+@patch("game.cli.AIGenerator")
+@patch("game.cli.GameEngine")
+def test_main_with_endpoint_skips_ollama(
+    mock_engine_cls: MagicMock,
+    mock_ai_generator_cls: MagicMock,
+    mock_check_conn: MagicMock,
+    mock_manage: MagicMock,
+) -> None:
+    """Ensure --endpoint bypasses the Ollama lifecycle and uses the given API."""
+    mock_engine = mock_engine_cls.return_value
+
+    main()
+
+    mock_manage.assert_not_called()
+    mock_check_conn.assert_not_called()
+    mock_ai_generator_cls.assert_called_once_with(
+        model="gpt-4o-mini", base_url="https://api.example.com/v1", api_key="sk-test"
+    )
+    mock_engine_cls.assert_called_once_with(
+        max_history=1000,
+        model="gpt-4o-mini",
+        ai_generator=mock_ai_generator_cls.return_value,
+        map_size=8,
+        max_loading_time=0.0,
+    )
+    mock_engine.start.assert_called_once()

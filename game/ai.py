@@ -13,6 +13,8 @@ from typing import Any, Generator
 
 import ollama
 from ollama import chat, generate, ps
+from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 from game.logger import log_event
 from game.mechanics import generate_mechanics
@@ -33,9 +35,22 @@ def load_prompt(filename: str) -> str:
 class AIGenerator:
     """Handles all LLM generation logic using a specific model."""
 
-    def __init__(self, model: str = "gemma4:e4b") -> None:
-        """Initialize the AI generator with a specific model."""
+    def __init__(
+        self,
+        model: str = "gemma4:e4b",
+        base_url: str | None = None,
+        api_key: str | None = None,
+    ) -> None:
+        """
+        Initialize the AI generator with a specific model.
+
+        When ``base_url`` is given, requests go to that OpenAI-compatible
+        endpoint instead of the local Ollama server.
+        """
         self.model = model
+        self.client = (
+            OpenAI(base_url=base_url, api_key=api_key or "ollama") if base_url else None
+        )
 
     @staticmethod
     @contextmanager
@@ -125,12 +140,22 @@ class AIGenerator:
 
     def _query_model(self, prompt: str, system_message: str | None = None) -> str:
         """Make a call to the AI model without silencing errors."""
-        messages = []
+        messages: list[ChatCompletionMessageParam] = []
         if system_message:
             messages.append({"role": "system", "content": system_message})
         messages.append({"role": "user", "content": prompt})
 
         log_event(f"API_CALL: {self.model}", prompt)
+        content = (
+            self._query_openai_compatible(messages)
+            if self.client
+            else self._query_ollama(messages)
+        )
+        log_event(f"API_RESPONSE: {self.model}", content)
+        return content
+
+    def _query_ollama(self, messages: list[ChatCompletionMessageParam]) -> str:
+        """Query the local Ollama server."""
         response = chat(
             model=self.model,
             messages=messages,
@@ -139,10 +164,23 @@ class AIGenerator:
         if not response.message or not response.message.content:
             logger.error("AI returned an empty response.")
             raise ValueError("AI returned an empty response.")
+        return response.message.content.strip()
 
-        content = response.message.content.strip()
-        log_event(f"API_RESPONSE: {self.model}", content)
-        return content
+    def _query_openai_compatible(
+        self, messages: list[ChatCompletionMessageParam]
+    ) -> str:
+        """Query a configured OpenAI-compatible endpoint."""
+        assert self.client is not None
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=0.7,
+        )
+        content = response.choices[0].message.content
+        if not content:
+            logger.error("AI returned an empty response.")
+            raise ValueError("AI returned an empty response.")
+        return content.strip()
 
     def generate_room(
         self,

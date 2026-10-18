@@ -86,7 +86,24 @@ def main() -> None:
         "--model",
         type=str,
         default="gemma4:e4b",
-        help="The Ollama model to use for the game (default: gemma4:e4b)",
+        help="The model to use for the game (default: gemma4:e4b)",
+    )
+    parser.add_argument(
+        "--endpoint",
+        type=str,
+        default=None,
+        metavar="URL",
+        help=(
+            "Base URL of an OpenAI-compatible API to use instead of a local "
+            "Ollama server (e.g. https://api.openai.com/v1)."
+        ),
+    )
+    parser.add_argument(
+        "--endpoint-api-key",
+        type=str,
+        default=None,
+        metavar="KEY",
+        help="API key for --endpoint, if required by the service.",
     )
     parser.add_argument(
         "--size",
@@ -105,6 +122,20 @@ def main() -> None:
         ),
     )
     args = parser.parse_args()
+
+    if args.endpoint:
+        ai_generator = AIGenerator(
+            model=args.model, base_url=args.endpoint, api_key=args.endpoint_api_key
+        )
+        engine = GameEngine(
+            max_history=args.history_length,
+            model=args.model,
+            ai_generator=ai_generator,
+            map_size=args.size,
+            max_loading_time=args.experimental_max_loading_time,
+        )
+        engine.start()
+        return
 
     with AIGenerator.manage_ollama(args.model):
         check_ollama_connection(args.model)

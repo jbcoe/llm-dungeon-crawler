@@ -2,7 +2,7 @@
 
 A text-based RPG dungeon crawler where the game engine handles the mechanics (stats, items, combat) and an LLM provides atmospheric descriptions and NPC dialogue.
 
-The game uses **Ollama** and the **Gemma 4** model (by default) locally to generate rich, "Dark Fantasy" storytelling as you explore a procedurally generated dungeon. You can also specify other local models using the `--model` flag.
+The game uses **Ollama** and the **Gemma 4** model (by default) locally to generate rich, "Dark Fantasy" storytelling as you explore a procedurally generated dungeon. You can also specify other local models using the `--model` flag, or point the game at any OpenAI-compatible API with `--endpoint`.
 
 ## Requirements
 
@@ -34,6 +34,13 @@ Before you can play, you need the following installed on your host machine:
    uv run dungeon-crawler --model llama3
    ```
 
+   **Using a Remote OpenAI-Compatible Endpoint:**
+   Instead of Ollama, you can point the game at any OpenAI-compatible API (OpenAI itself, Azure OpenAI, OpenRouter, vLLM, etc.) with `--endpoint` and `--endpoint-api-key`. Ollama is not started or checked when `--endpoint` is set:
+
+   ```bash
+   uv run dungeon-crawler --model gpt-4o-mini --endpoint https://api.openai.com/v1 --endpoint-api-key sk-...
+   ```
+
 ## Gameplay Controls
 
 Once the game starts, you interact via text commands:
@@ -48,12 +55,14 @@ Once the game starts, you interact via text commands:
 
 ## Command-Line Options
 
-| Option                                      | Default        | Description                                                                                                                                                                                                                                                                                                         |
-| ------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--model <name>`                            | `gemma4:e4b`   | The Ollama model used to generate narrative text. Smaller models load faster and use less memory but may produce lower-quality descriptions. Larger or more capable models give richer storytelling at the cost of slower responses. Make sure you have pulled the model via `ollama pull <name>` before launching. |
-| `--size <n>`                                | `8`            | The width/height of the pre-generated dungeon map (minimum 3). Larger maps mean more rooms to explore but take slightly longer to generate at start-up.                                                                                                                                                             |
-| `--history-length <n>`                      | `1000`         | Maximum number of commands retained in the readline history. Set to `0` to disable history. Reducing this value may help in memory-constrained environments.                                                                                                                                                        |
-| `--experimental-max-loading-time <seconds>` | `0` (disabled) | **Experimental.** Adds a random delay of up to the given number of seconds between room transitions, simulating the feel of a retro game loading screen. Has no effect on gameplay beyond pacing.                                                                                                                   |
+| Option                                      | Default        | Description                                                                                                                                                                                                                                                                                                          |
+| ------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--model <name>`                            | `gemma4:e4b`   | The model used to generate narrative text. Without `--endpoint`, this is an Ollama model, and must be pulled via `ollama pull <name>` before launching. With `--endpoint`, this is the model name the remote API expects. Smaller models load faster and use less memory but may produce lower-quality descriptions. |
+| `--endpoint <url>`                          | none           | Base URL of an OpenAI-compatible API (e.g. `https://api.openai.com/v1`) to use instead of a local Ollama server. When set, the game does not start or check Ollama.                                                                                                                                                  |
+| `--endpoint-api-key <key>`                  | none           | API key sent to `--endpoint`, if the service requires one.                                                                                                                                                                                                                                                           |
+| `--size <n>`                                | `8`            | The width/height of the pre-generated dungeon map (minimum 3). Larger maps mean more rooms to explore but take slightly longer to generate at start-up.                                                                                                                                                              |
+| `--history-length <n>`                      | `1000`         | Maximum number of commands retained in the readline history. Set to `0` to disable history. Reducing this value may help in memory-constrained environments.                                                                                                                                                         |
+| `--experimental-max-loading-time <seconds>` | `0` (disabled) | **Experimental.** Adds a random delay of up to the given number of seconds between room transitions, simulating the feel of a retro game loading screen. Has no effect on gameplay beyond pacing.                                                                                                                    |
 
 Example — launch with a smaller model on a map of 12×12:
 
