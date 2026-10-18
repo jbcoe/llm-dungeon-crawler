@@ -11,7 +11,7 @@ from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
 from game.ai import AIGenerator
 from game.logger import log_event, setup_logger
 from game.map import Map
-from game.mechanics import ENEMIES, ITEMS, NPCS, _get_item_mechanics
+from game.mechanics import ENEMIES, ITEMS, NPCS, _get_item_mechanics, roll_enemy_stats
 from game.models import NPC, Enemy, Item, Player, Room
 
 
@@ -133,7 +133,8 @@ class GameUI:
             for enemy in room.enemies:
                 self.print(
                     f"[bold red]Enemy:[/bold red] {escape(enemy.name)} "
-                    f"(HP: {enemy.hp}/{enemy.max_hp}) - {escape(enemy.description)}"
+                    f"(Level {enemy.level}, HP: {enemy.hp}/{enemy.max_hp}) - "
+                    f"{escape(enemy.description)}"
                 )
 
         if room.npcs:
@@ -758,14 +759,14 @@ class GameEngine:
 
         if ENEMIES and random.random() < spawn_chance:
             enemy_data = random.choice(ENEMIES)
-            hp = 10 + self.floor * 5
-            attack = 3 + self.floor * 2
+            hp, attack, level = roll_enemy_stats(enemy_data)
             new_enemy = Enemy(
                 name=enemy_data["name"],
                 description=enemy_data["description"],
                 hp=hp,
                 max_hp=hp,
                 attack=attack,
+                level=level,
             )
             self.current_room.enemies.append(new_enemy)
             self.ui.print(
@@ -827,14 +828,14 @@ class GameEngine:
                 self.ui.print("No monster data available.")
                 return
             data = random.choice(ENEMIES)
-            hp = 10 + self.floor * 5
-            attack = 3 + self.floor * 2
+            hp, attack, level = roll_enemy_stats(data)
             monster = Enemy(
                 name=data["name"],
                 description=data["description"],
                 hp=hp,
                 max_hp=hp,
                 attack=attack,
+                level=level,
             )
             self.current_room.enemies.append(monster)
             self.ui.print(f"[bold red]{monster.name} appears![/bold red]")

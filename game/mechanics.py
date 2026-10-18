@@ -1,12 +1,18 @@
 """Game mechanics and data loading."""
 
 import importlib.resources
+import json
 import logging
 import random
 import re
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_ENEMY_HP = 10
+DEFAULT_ENEMY_ATTACK = 5
+DEFAULT_ENEMY_LEVEL = 1
+_ENEMY_STAT_JITTER = 2
 
 
 def load_data(filename: str) -> list[dict[str, str]]:
@@ -30,7 +36,40 @@ def load_data(filename: str) -> list[dict[str, str]]:
     return items
 
 
-ENEMIES = load_data("enemies.md")
+def load_enemy_data(filename: str) -> list[dict[str, Any]]:
+    """Load enemy definitions, including base hp/attack, from a JSON file."""
+    enemies: list[dict[str, Any]] = []
+    try:
+        filepath = importlib.resources.files("game.data").joinpath(filename)
+        if not filepath.is_file():
+            logger.error(f"Missing expected data file: {filename}")
+            return []
+
+        enemies = json.loads(filepath.read_text(encoding="utf-8"))
+    except Exception:
+        logger.exception(f"Error loading data from {filename}")
+
+    return enemies
+
+
+def roll_enemy_stats(enemy_data: dict[str, Any]) -> tuple[int, int, int]:
+    """
+    Roll an enemy's hp/attack from its base stats, with a small fixed jitter.
+
+    The jitter does not depend on dungeon floor, so enemies of a given type
+    stay roughly the same strength no matter how deep the player has gone.
+    Level is read directly from the enemy's data and is not jittered.
+    """
+    base_hp = enemy_data.get("hp", DEFAULT_ENEMY_HP)
+    base_attack = enemy_data.get("attack", DEFAULT_ENEMY_ATTACK)
+    jitter = _ENEMY_STAT_JITTER
+    hp = max(1, base_hp + random.randint(-jitter, jitter))
+    attack = max(1, base_attack + random.randint(-jitter, jitter))
+    level = enemy_data.get("level", DEFAULT_ENEMY_LEVEL)
+    return hp, attack, level
+
+
+ENEMIES = load_enemy_data("enemies.json")
 ITEMS = load_data("items.md")
 NPCS = load_data("npcs.md")
 ROOMS = load_data("rooms.md")
@@ -97,8 +136,7 @@ def generate_mechanics(
 
     if ENEMIES and random.random() < enemy_chance:
         enemy_data = random.choice(ENEMIES)
-        hp = 10 + floor * 5
-        attack = 3 + floor * 2
+        hp, attack, level = roll_enemy_stats(enemy_data)
         room_enemies.append(
             {
                 "name": enemy_data["name"],
@@ -106,6 +144,7 @@ def generate_mechanics(
                 "hp": hp,
                 "max_hp": hp,
                 "attack": attack,
+                "level": level,
             }
         )
 

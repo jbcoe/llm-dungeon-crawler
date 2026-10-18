@@ -26,6 +26,7 @@ class Enemy(GameModel):
     hp: int = Field(default=10)
     max_hp: int = Field(default=10)
     attack: int = Field(default=5)
+    level: int = Field(default=1)
 
 
 class NPC(GameModel):
