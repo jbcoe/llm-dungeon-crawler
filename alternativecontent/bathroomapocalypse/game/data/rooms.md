@@ -1,0 +1,26 @@
+# Room Types
+
+- Echoing Lobby:A vast tiled hall smelling of polish and damp coats, designed to impress while quietly reminding visitors they don’t belong.
+- Judgemental Reception:A brightly lit desk where policies are enforced with smiles and raised eyebrows.
+- Overheated Changing Room:A sweltering chamber of lockers, steam, and quiet shame.
+- Moralizing Bathroom:A spotless-once facility plastered with signs explaining how users have failed it.
+- Endless Shower Block:A labyrinth of identical stalls hissing endlessly, none quite warm enough.
+- Flickering Corridor:A long passage of buzzing lights encouraging brisk movement and reflection.
+- Staff Break Room:A cramped space where kettle stains outnumber breaks and morale is strictly rationed.
+- Manager’s Office:A carpeted sanctuary smelling faintly of coffee and unearned authority.
+- Desolate Pool Hall:A chlorinated expanse echoing with splashes and institutional optimism.
+- Utility Closet of Secrets:A locked door humming softly, definitely containing more than cleaning supplies.
+- Maintenance Workshop:A shadowy space of tools, leaks, and postponed fixes.
+- Silent Sauna:A wooden room radiating heat, judgement, and the illusion of wellness.
+- Overflowing Bin Store:A concrete annex where the complex’s consequences quietly accumulate.
+- Overbooked Activity Room:A multipurpose space stretched thin by constant demands.
+- Compliance Training Suite:A windowless room devoted to laminated rules and cheerful warnings.
+- Staff Toilet Block:A functional area maintained just well enough to prevent revolt.
+- Premium Member Lounge:A plush room separating those who paid more from those who clean up.
+- Wet Tiled Stairwell:A perpetually damp staircase connecting important places inconveniently.
+- Broken Vending Alcove:A snack nook offering expired calories at premium prices.
+- Emergency Equipment Room:A reassuringly labelled space whose contents are never quite complete.
+- Lost Property Office:A holding pen for mismatched shoes and crushed hopes.
+- External Service Corridor:A back-route for staff and supplies, hidden from polite company.
+- Temporary Signs Hallway:A corridor where laminated notices breed unchecked.
+- Final Wash Area:A last opportunity for cleanliness before returning to a less forgiving world.

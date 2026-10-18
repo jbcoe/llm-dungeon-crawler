@@ -1,6 +1,6 @@
 # Development Guide
 
-This document outlines how to develop and contribute to `llm-dungeon-crawler`.
+This document outlines how to develop and contribute to `llm-cungeon-drawler`.
 
 ## Architecture: The Dual-LLM Setup
 
