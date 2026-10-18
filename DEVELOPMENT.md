@@ -43,10 +43,10 @@ Both agents accept the following flags:
 
 The game is designed to be easily expanded by non-programmers. All flavor text, entities, environments, and core AI prompts are data-driven and can be updated without touching any Python code.
 
-All content is stored in the `game/data/` directory as standard Markdown (`.md`) files:
+All content is stored in the `game/data/` directory as standard Markdown (`.md`) or JSON files:
 
 1. **Entities and Environments:**
-   Lists of available enemies, items, NPCs, and rooms are defined in their respective markdown files (e.g., `enemies.md`, `rooms.md`). To add new content, add a new line following the established `- Name: Description` format. The game engine automatically loads these at runtime.
+   Lists of available items, NPCs, and rooms are defined in their respective markdown files (e.g., `items.md`, `rooms.md`); add new content with a line following the established `- Name: Description` format. Enemies are defined in `enemies.json`, a list of objects with `name`, `description`, `hp`, `attack`, and `level`; `hp`/`attack` are the enemy's base stats and stay fixed regardless of dungeon floor, with only a small random jitter applied at spawn time. `level` is reported to the player and does not change at runtime. The game engine automatically loads these at runtime.
 
 2. **AI Prompts:**
    All instructions sent to the Ollama LLM are stored as prompt templates (e.g., `prompts/room.md`, `prompts/combat.md`). These files control the tone, style, and rules the AI follows when generating narrative text.
