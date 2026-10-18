@@ -1,10 +1,12 @@
 """Unit tests for ai.py."""
 
+import json
 from unittest.mock import MagicMock, patch
+from urllib.request import Request
 
 import pytest
 
-from game.ai import AIGenerator, load_prompt
+from game.ai import AIGenerator, SafeRedirectHandler, load_prompt
 
 
 def test_load_prompt_missing() -> None:
@@ -123,6 +125,79 @@ def test_empty_ai_response(mock_chat: MagicMock) -> None:
     mock_chat.return_value = MagicMock(message=MagicMock(content=None))
     with pytest.raises(ValueError, match="AI returned an empty response."):
         AIGenerator().generate_intro()
+
+
+@patch("game.ai.safe_urlopen")
+def test_openai_compatible_query(mock_urlopen: MagicMock) -> None:
+    """Send prompts to an OpenAI-compatible endpoint and return its content."""
+    response = MagicMock()
+    response.__enter__.return_value.read.return_value = json.dumps(
+        {"choices": [{"message": {"content": "A shadowed chamber awaits."}}]}
+    ).encode()
+    mock_urlopen.return_value = response
+
+    generator = AIGenerator(
+        model="remote-model",
+        backend="openai",
+        base_url="http://api.example/v1/",
+        api_key="test-key",
+    )
+
+    result = generator._query_model("Describe the room.", "Be concise.")
+
+    assert result == "A shadowed chamber awaits."
+    request = mock_urlopen.call_args.args[0]
+    assert request.full_url == "http://api.example/v1/chat/completions"
+    assert request.get_header("Authorization") == "Bearer test-key"
+    payload = json.loads(request.data)
+    assert payload == {
+        "model": "remote-model",
+        "messages": [
+            {"role": "system", "content": "Be concise."},
+            {"role": "user", "content": "Describe the room."},
+        ],
+        "temperature": 0.7,
+    }
+
+
+def test_safe_redirect_strips_authorization_across_origins() -> None:
+    """Do not forward API credentials when a redirect changes origin."""
+    request = Request(
+        "https://api.example/v1/models",
+        headers={"Authorization": "Bearer test-key"},
+    )
+
+    redirected = SafeRedirectHandler().redirect_request(
+        request,
+        None,
+        302,
+        "Found",
+        {},
+        "https://other.example/v1/models",
+    )
+
+    assert redirected is not None
+    assert redirected.get_header("Authorization") is None
+
+
+def test_safe_redirect_preserves_authorization_on_same_origin() -> None:
+    """Preserve API credentials for redirects within the configured origin."""
+    request = Request(
+        "https://api.example/v1/models",
+        headers={"Authorization": "Bearer test-key"},
+    )
+
+    redirected = SafeRedirectHandler().redirect_request(
+        request,
+        None,
+        307,
+        "Temporary Redirect",
+        {},
+        "https://api.example/v2/models",
+    )
+
+    assert redirected is not None
+    assert redirected.get_header("Authorization") == "Bearer test-key"
 
 
 @patch("game.ai.generate_mechanics")

@@ -1,6 +1,7 @@
 """AI-powered narration and response generation."""
 
 import importlib.resources
+import json
 import logging
 import os
 import signal
@@ -10,6 +11,8 @@ import urllib.parse
 from contextlib import contextmanager
 from functools import lru_cache
 from typing import Any, Generator
+from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 import ollama
 from ollama import chat, generate, ps
@@ -19,6 +22,41 @@ from game.mechanics import generate_mechanics
 from game.utils import get_model_name, models_match
 
 logger = logging.getLogger(__name__)
+
+
+def _url_origin(url: str) -> tuple[str, str, int | None]:
+    """Return a normalized origin tuple for redirect credential checks."""
+    parsed = urlsplit(url)
+    default_port = {"http": 80, "https": 443}.get(parsed.scheme.lower())
+    return (
+        parsed.scheme.lower(),
+        (parsed.hostname or "").lower(),
+        parsed.port or default_port,
+    )
+
+
+class SafeRedirectHandler(HTTPRedirectHandler):
+    """Follow redirects without forwarding credentials to another origin."""
+
+    def redirect_request(
+        self,
+        req: Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> Request | None:
+        """Strip authorization whenever a redirect changes scheme, host, or port."""
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is not None and _url_origin(req.full_url) != _url_origin(newurl):
+            redirected.remove_header("Authorization")
+        return redirected
+
+
+def safe_urlopen(request: Request, timeout: float) -> Any:
+    """Open an HTTP request using credential-safe redirect handling."""
+    return build_opener(SafeRedirectHandler()).open(request, timeout=timeout)
 
 
 @lru_cache(maxsize=None)
@@ -33,9 +71,22 @@ def load_prompt(filename: str) -> str:
 class AIGenerator:
     """Handles all LLM generation logic using a specific model."""
 
-    def __init__(self, model: str = "gemma4:e4b") -> None:
-        """Initialize the AI generator with a specific model."""
+    def __init__(
+        self,
+        model: str = "gemma4:e4b",
+        backend: str = "ollama",
+        base_url: str | None = None,
+        api_key: str | None = None,
+    ) -> None:
+        """Initialize the AI generator with a model and inference backend."""
+        if backend not in {"ollama", "openai"}:
+            raise ValueError(f"Unsupported AI backend: {backend}")
+        if backend == "openai" and not base_url:
+            raise ValueError("An OpenAI-compatible backend requires a base URL")
         self.model = model
+        self.backend = backend
+        self.base_url = base_url.rstrip("/") if base_url else None
+        self.api_key = api_key
 
     @staticmethod
     @contextmanager
@@ -124,23 +175,46 @@ class AIGenerator:
                     pass
 
     def _query_model(self, prompt: str, system_message: str | None = None) -> str:
-        """Make a call to the AI model without silencing errors."""
+        """Make a call to the configured AI backend without silencing errors."""
         messages = []
         if system_message:
             messages.append({"role": "system", "content": system_message})
         messages.append({"role": "user", "content": prompt})
 
         log_event(f"API_CALL: {self.model}", prompt)
-        response = chat(
-            model=self.model,
-            messages=messages,
-            options={"temperature": 0.7},
-        )
-        if not response.message or not response.message.content:
+        if self.backend == "ollama":
+            response = chat(
+                model=self.model,
+                messages=messages,
+                options={"temperature": 0.7},
+            )
+            content = response.message.content if response.message else None
+        else:
+            payload = json.dumps(
+                {
+                    "model": self.model,
+                    "messages": messages,
+                    "temperature": 0.7,
+                }
+            ).encode()
+            headers = {"Content-Type": "application/json"}
+            if self.api_key:
+                headers["Authorization"] = f"Bearer {self.api_key}"
+            request = Request(
+                f"{self.base_url}/chat/completions",
+                data=payload,
+                headers=headers,
+                method="POST",
+            )
+            with safe_urlopen(request, timeout=120) as response:
+                response_data = json.loads(response.read())
+            content = response_data["choices"][0]["message"].get("content")
+
+        if not content:
             logger.error("AI returned an empty response.")
             raise ValueError("AI returned an empty response.")
 
-        content = response.message.content.strip()
+        content = str(content).strip()
         log_event(f"API_RESPONSE: {self.model}", content)
         return content
 
